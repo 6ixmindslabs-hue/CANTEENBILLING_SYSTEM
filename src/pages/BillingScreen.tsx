@@ -41,22 +41,97 @@ export default function BillingScreen() {
             });
         }
 
-        // 2. ESC/POS Bluetooth Printing Simulation (Web Bluetooth API would be used here in a real PWA context)
-        // For now we log indicating print success and clear cart
-        console.log("Printing to ESC/POS...");
+        // 2. Print via Browser Print API formatted for 58mm
+        const printWindow = document.createElement('iframe');
+        printWindow.style.position = 'absolute';
+        printWindow.style.top = '-1000px';
+        document.body.appendChild(printWindow);
 
-        let receiptText = `${t('college_canteen')}\n`;
-        receiptText += "------------------------\n";
-        cart.forEach(item => {
-            const displayName = i18n.language === 'ta' && item.nameTa ? item.nameTa : item.name;
-            receiptText += `${displayName.padEnd(10)} ${item.quantity.toString().padStart(4)} ${item.price.toString().padStart(5)}\n`;
-        });
-        receiptText += "------------------------\n";
-        receiptText += `Total:          ${orderTotal}\n\n`;
-        receiptText += "Thank You\n\n\n";
-        console.log(receiptText);
+        const printDoc = printWindow.contentWindow?.document;
+        if (printDoc) {
+            printDoc.open();
+            printDoc.write(`
+                <html>
+                <head>
+                    <title>Print Receipt</title>
+                    <style>
+                        @page { margin: 0; size: 58mm auto; }
+                        body {
+                            font-family: 'monospace';
+                            width: 48mm; /* Leave small margin inside 58mm */
+                            margin: 0 auto;
+                            padding: 10px 0;
+                            font-size: 12px;
+                            color: #000;
+                        }
+                        .text-center { text-align: center; }
+                        .font-bold { font-weight: bold; }
+                        .text-lg { font-size: 14px; }
+                        .divider { border-bottom: 1px dashed #000; margin: 8px 0; }
+                        table { w-full; border-collapse: collapse; width: 100%; }
+                        th, td { text-align: left; padding: 2px 0; }
+                        .text-right { text-align: right; }
+                        .text-center { text-align: center; }
+                        .item-name { width: 50%; max-width: 24mm; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+                        .qty { width: 15%; text-align: center; }
+                        .price { width: 35%; text-align: right; }
+                        .total-row { display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-top: 5px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="text-center font-bold text-lg">
+                        ${t('college_canteen')}
+                    </div>
+                    <div class="text-center">
+                        ${new Date().toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                    </div>
+                    
+                    <div class="divider"></div>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th class="item-name">Item</th>
+                                <th class="qty">Qty</th>
+                                <th class="price">Amt</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${cart.map(item => {
+                const displayName = i18n.language === 'ta' && item.nameTa ? item.nameTa : item.name;
+                return `
+                                <tr>
+                                    <td class="item-name">${displayName}</td>
+                                    <td class="qty">${item.quantity}</td>
+                                    <td class="price">${item.price * item.quantity}</td>
+                                </tr>`;
+            }).join('')}
+                        </tbody>
+                    </table>
+                    
+                    <div class="divider"></div>
+                    
+                    <div class="total-row">
+                        <span>Total:</span>
+                        <span>Rs.${orderTotal}</span>
+                    </div>
+                    
+                    <div class="divider"></div>
+                    
+                    <div class="text-center">
+                        Thank You!
+                    </div>
+                </body>
+                </html>
+            `);
+            printDoc.close();
 
-        alert(`Receipt Printed: \n\n${receiptText}`);
+            printWindow.contentWindow?.focus();
+            setTimeout(() => {
+                printWindow.contentWindow?.print();
+                document.body.removeChild(printWindow);
+            }, 500); // Give time for styles to render
+        }
 
         // 3. Clear Bill
         clearCart();

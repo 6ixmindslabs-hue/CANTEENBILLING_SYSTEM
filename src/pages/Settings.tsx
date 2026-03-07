@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { db } from '../db/db';
-import { Languages, Printer, Trash2, Database, Key, Eye, EyeOff, Download, Upload, Server, ImageIcon, CheckCircle } from 'lucide-react';
+import { Languages, Trash2, Database, Key, Eye, EyeOff, Download, Upload, Server, ImageIcon, CheckCircle } from 'lucide-react';
 
 export default function Settings() {
     const { t, i18n } = useTranslation();
-    const [printerName, setPrinterName] = useState('Bluetooth_Printer_58mm');
     const [clearing, setClearing] = useState(false);
     const [exporting, setExporting] = useState(false);
     const [exportSuccess, setExportSuccess] = useState(false);
@@ -23,10 +22,6 @@ export default function Settings() {
 
     const handleLanguageChange = (lang: string) => {
         i18n.changeLanguage(lang);
-    };
-
-    const handleSavePrinter = () => {
-        alert(`${t('printer_set_to')}: ${printerName}`);
     };
 
     const handleChangePin = (e: React.FormEvent) => {
@@ -180,32 +175,6 @@ export default function Settings() {
                     >
                         தமிழ் (Tamil)
                     </button>
-                </div>
-            </div>
-
-            <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
-                <h2 className="text-2xl font-bold mb-8 text-slate-800 flex items-center gap-3">
-                    <Printer className="text-blue-600" />
-                    {t('printer_configuration')}
-                </h2>
-
-                <div className="space-y-4">
-                    <label className="font-bold text-slate-600 ml-1">{t('bluetooth_printer_name')}</label>
-                    <div className="flex gap-4">
-                        <input
-                            type="text"
-                            value={printerName}
-                            onChange={(e) => setPrinterName(e.target.value)}
-                            className="flex-1 p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-lg"
-                        />
-                        <button
-                            onClick={handleSavePrinter}
-                            className="px-8 py-4 bg-slate-800 text-white font-bold rounded-xl hover:bg-slate-900 transition"
-                        >
-                            {t('save')}
-                        </button>
-                    </div>
-                    <p className="text-slate-500 text-sm">{t('printer_help_text')}</p>
                 </div>
             </div>
 

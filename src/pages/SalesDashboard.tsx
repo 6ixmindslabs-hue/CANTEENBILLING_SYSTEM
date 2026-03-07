@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
-import { TrendingUp, ShoppingBag, Award, Printer, CalendarDays, FileText } from 'lucide-react';
+import { TrendingUp, ShoppingBag, Printer, CalendarDays, FileText } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 // Format YYYY-MM-DD helper for inputs
@@ -38,7 +38,7 @@ export default function SalesDashboard() {
         if (filter === 'Custom') return;
 
         const now = new Date();
-        const endStr = toDateStr(now);
+        let endStr = toDateStr(now);
         setEndDate(endStr);
 
         let startD = new Date();
@@ -47,6 +47,7 @@ export default function SalesDashboard() {
         } else if (filter === 'Yesterday') {
             startD.setDate(startD.getDate() - 1);
             setEndDate(toDateStr(startD)); // Yesterday ends yesterday
+            endStr = toDateStr(startD);
         } else if (filter === 'This Week') {
             const day = startD.getDay();
             const diff = startD.getDate() - day + (day === 0 ? -6 : 1); // Monday start
@@ -54,17 +55,21 @@ export default function SalesDashboard() {
         } else if (filter === 'This Month') {
             startD.setDate(1);
         }
-        setStartDate(toDateStr(startD));
+
+        const startStr = toDateStr(startD);
+        setStartDate(startStr);
+        setReportPeriod({ start: startStr, end: endStr });
     };
 
     const handleDateChange = (val: string, type: 'start' | 'end') => {
         setActiveFilter('Custom');
-        if (type === 'start') setStartDate(val);
-        else setEndDate(val);
-    };
-
-    const handleGenerate = () => {
-        setReportPeriod({ start: startDate, end: endDate });
+        if (type === 'start') {
+            setStartDate(val);
+            setReportPeriod({ start: val, end: endDate });
+        } else {
+            setEndDate(val);
+            setReportPeriod({ start: startDate, end: val });
+        }
     };
 
     // Calculate all report data based exclusively on reportPeriod
@@ -153,52 +158,95 @@ export default function SalesDashboard() {
     };
 
     const handlePrint = () => {
-        let receiptText = "\nCANTEEN SALES REPORT\n";
-        receiptText += "----------------------------\n";
-        receiptText += `From: ${formatShortDate(reportPeriod.start)}\n`;
-        receiptText += `To:   ${formatShortDate(reportPeriod.end)}\n\n`;
-        receiptText += `Total Orders: ${reportData.totalOrders}\n`;
-        receiptText += `Total Sales: Rs.${reportData.totalSales}\n\n`;
+        const printWindow = document.createElement('iframe');
+        printWindow.style.position = 'absolute';
+        printWindow.style.top = '-1000px';
+        document.body.appendChild(printWindow);
 
-        receiptText += "----------------------------\n";
-        receiptText += "CATEGORY SALES\n";
-        receiptText += "----------------------------\n";
-
-        let hasCats = false;
-        categories.forEach(cat => {
-            const catSales = reportData.categorySalesMap[cat.id] || 0;
-            if (catSales > 0) {
-                hasCats = true;
-                const catNameText = i18n.language === 'ta' && cat.nameTa ? cat.nameTa : cat.name;
-                receiptText += `${catNameText.padEnd(14)} Rs.${catSales}\n`;
-            }
-        });
-        const unkSales = reportData.categorySalesMap['unknown'] || 0;
-        if (unkSales > 0) {
-            hasCats = true;
-            receiptText += `Uncategorized  Rs.${unkSales}\n`;
-        }
-        if (!hasCats) {
-            receiptText += "No sales found.\n";
-        }
-
-        receiptText += "\nTop Items:\n";
-        const sortedItems = Object.entries(reportData.itemSalesMap).sort((a, b) => b[1] - a[1]).slice(0, 3);
-        if (sortedItems.length > 0) {
-            sortedItems.forEach(([name, qty]) => {
-                receiptText += `${name.padEnd(14)} ${qty}\n`;
+        const printDoc = printWindow.contentWindow?.document;
+        if (printDoc) {
+            let catHtml = '';
+            let hasCats = false;
+            categories.forEach(cat => {
+                const catSales = reportData.categorySalesMap[cat.id] || 0;
+                if (catSales > 0) {
+                    hasCats = true;
+                    const catNameText = i18n.language === 'ta' && cat.nameTa ? cat.nameTa : cat.name;
+                    catHtml += `<div class="flex-between"><span>${catNameText}</span><span>Rs.${catSales}</span></div>`;
+                }
             });
-        } else {
-            receiptText += "No items found.\n";
+            const unkSales = reportData.categorySalesMap['unknown'] || 0;
+            if (unkSales > 0) {
+                hasCats = true;
+                catHtml += `<div class="flex-between"><span>Uncategorized</span><span>Rs.${unkSales}</span></div>`;
+            }
+            if (!hasCats) {
+                catHtml = '<div class="text-center">No sales</div>';
+            }
+
+            printDoc.open();
+            printDoc.write(`
+                <html>
+                <head>
+                    <title>Report - ${formatShortDate(reportPeriod.start)}</title>
+                    <style>
+                        @page { margin: 0; size: 58mm auto; }
+                        body {
+                            font-family: 'monospace';
+                            width: 48mm;
+                            margin: 0 auto;
+                            padding: 10px 0;
+                            font-size: 11px;
+                            color: #000;
+                        }
+                        .text-center { text-align: center; }
+                        .font-bold { font-weight: bold; }
+                        .text-lg { font-size: 13px; }
+                        .divider { border-bottom: 1px dashed #000; margin: 6px 0; }
+                        .flex-between { display: flex; justify-content: space-between; margin-bottom: 3px; }
+                        .title { margin-bottom: 4px; font-weight: bold; text-align: center;}
+                    </style>
+                </head>
+                <body>
+                    <div class="text-center font-bold text-lg">
+                        SALES REPORT
+                    </div>
+                    <div class="text-center">
+                        ${formatShortDate(reportPeriod.start)} to ${formatShortDate(reportPeriod.end)}
+                    </div>
+                    
+                    <div class="divider"></div>
+                    
+                    <div class="flex-between font-bold">
+                        <span>Orders:</span>
+                        <span>${reportData.totalOrders}</span>
+                    </div>
+                    <div class="flex-between font-bold">
+                        <span>Total Sales:</span>
+                        <span>Rs.${reportData.totalSales}</span>
+                    </div>
+
+                    <div class="divider"></div>
+                    <div class="title">CATEGORY SALES</div>
+                    <div class="divider"></div>
+                    
+                    ${catHtml}
+
+                    <div class="divider"></div>
+                    <div class="text-center">
+                        Printed: ${new Date().toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                    </div>
+                </body>
+                </html>
+            `);
+            printDoc.close();
+
+            printWindow.contentWindow?.focus();
+            setTimeout(() => {
+                printWindow.contentWindow?.print();
+                document.body.removeChild(printWindow);
+            }, 500);
         }
-
-        receiptText += "\n----------------------------\n";
-        receiptText += `Printed: ${new Date().toLocaleString()}\n`;
-        receiptText += "\n\n\n";
-
-        console.log("Printing Report to ESC/POS...");
-        console.log(receiptText);
-        alert(`Printed Report: \n\n${receiptText}`);
     };
 
     return (
@@ -262,12 +310,6 @@ export default function SalesDashboard() {
 
                         <div className="flex gap-4 w-full lg:w-auto">
                             <button
-                                onClick={handleGenerate}
-                                className="flex-1 lg:flex-none px-8 py-4 bg-blue-600 text-white font-black text-lg rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/30"
-                            >
-                                {t('generate_report')}
-                            </button>
-                            <button
                                 onClick={handlePrint}
                                 className="flex-none px-6 py-4 bg-slate-800 text-white font-black text-lg rounded-xl hover:bg-slate-900 transition-all flex items-center gap-3 shadow-lg"
                             >
@@ -280,7 +322,7 @@ export default function SalesDashboard() {
             </div>
 
             {/* Stats Cards (Controlled by Generated Report) */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-gradient-to-br from-indigo-500 to-blue-700 text-white p-6 rounded-2xl shadow-lg border border-blue-400 relative overflow-hidden">
                     <ShoppingBag className="absolute -right-6 -bottom-6 text-blue-400 opacity-20 w-48 h-48" />
                     <h3 className="text-xl font-medium text-blue-100 mb-2">{t('total_orders')}</h3>
@@ -293,13 +335,6 @@ export default function SalesDashboard() {
                     <h3 className="text-xl font-medium text-emerald-100 mb-2">{t('total_sales')}</h3>
                     <p className="text-5xl font-black text-white">₹{reportData.totalSales}</p>
                     <p className="text-emerald-200 mt-2 font-medium">{t('for_selected_period')}</p>
-                </div>
-
-                <div className="bg-gradient-to-br from-amber-500 to-orange-600 text-white p-6 rounded-2xl shadow-lg border border-orange-400 relative overflow-hidden">
-                    <Award className="absolute -right-6 -bottom-6 text-amber-300 opacity-20 w-48 h-48" />
-                    <h3 className="text-xl font-medium text-amber-100 mb-2">{t('top_item')}</h3>
-                    <p className="text-4xl font-black text-white truncate pr-16 leading-tight">{reportData.topItem}</p>
-                    <p className="text-amber-200 mt-2 font-medium">{t('by_volume_sold')}</p>
                 </div>
             </div>
 
