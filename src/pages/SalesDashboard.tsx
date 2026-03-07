@@ -128,7 +128,7 @@ export default function SalesDashboard() {
                 ...item,
                 cartItemId: item.id + '-' + order.id,
                 date: order.date,
-                categoryName: categoryDef ? (i18n.language === 'ta' && categoryDef.nameTa ? categoryDef.nameTa : categoryDef.name) : 'Uncategorized',
+                categoryName: categoryDef ? (i18n.language === 'ta' && categoryDef.nameTa ? categoryDef.nameTa : categoryDef.name) : t('uncategorized'),
                 itemNameDisplay: i18n.language === 'ta' && item.nameTa ? item.nameTa : item.name,
                 total: item.price * item.quantity
             };
@@ -309,7 +309,7 @@ export default function SalesDashboard() {
                     <h3 className="text-xl font-bold text-slate-800">
                         {t('itemized_sales_report')}
                         <span className="block text-sm font-medium text-slate-500 mt-1">
-                            {formatShortDate(reportPeriod.start)} to {formatShortDate(reportPeriod.end)}
+                            {formatShortDate(reportPeriod.start)} {t('to_word')} {formatShortDate(reportPeriod.end)}
                         </span>
                     </h3>
                 </div>

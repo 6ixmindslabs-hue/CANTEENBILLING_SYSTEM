@@ -5,7 +5,7 @@ import { db } from '../db/db';
 import { Trash2, Plus, Edit, Image as ImageIcon } from 'lucide-react';
 
 export default function ItemsManagement() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const items = useLiveQuery(() => db.items.toArray()) || [];
     const categories = useLiveQuery(() => db.categories.toArray()) || [];
 
@@ -63,7 +63,7 @@ export default function ItemsManagement() {
     };
 
     const handleDelete = async (id: string) => {
-        if (window.confirm('Are you sure you want to delete this item?')) {
+        if (window.confirm(t('confirm_delete_item'))) {
             await db.items.delete(id);
         }
     };
@@ -117,9 +117,9 @@ export default function ItemsManagement() {
                             className="w-full p-4 border border-slate-200 bg-white rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-lg transition-shadow"
                             required
                         >
-                            <option value="" disabled>Select a Category</option>
+                            <option value="" disabled>{t('select_a_category')}</option>
                             {categories.map((cat) => (
-                                <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                <option key={cat.id} value={cat.id}>{i18n.language === 'ta' && cat.nameTa ? cat.nameTa : cat.name}</option>
                             ))}
                         </select>
                     </div>
@@ -129,7 +129,7 @@ export default function ItemsManagement() {
                         <div className="flex items-center gap-4">
                             <label className="flex-1 cursor-pointer w-full p-4 border-2 border-dashed border-slate-300 rounded-xl hover:bg-slate-50 transition-colors group flex items-center justify-center gap-3">
                                 <ImageIcon className="text-slate-400 group-hover:text-blue-500 transition-colors" />
-                                <span className="font-medium text-slate-500 group-hover:text-blue-600">Choose Image File</span>
+                                <span className="font-medium text-slate-500 group-hover:text-blue-600">{t('choose_image_file')}</span>
                                 <input
                                     type="file"
                                     accept="image/*"

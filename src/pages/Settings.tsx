@@ -23,7 +23,7 @@ export default function Settings() {
     };
 
     const handleSavePrinter = () => {
-        alert(`Printer set to: ${printerName}`);
+        alert(`${t('printer_set_to')}: ${printerName}`);
     };
 
     const handleChangePin = (e: React.FormEvent) => {
@@ -31,35 +31,35 @@ export default function Settings() {
         const savedPin = localStorage.getItem('adminPin') || '1234';
 
         if (currentPin !== savedPin) {
-            alert('Incorrect current PIN!');
+            alert(t('incorrect_pin'));
             return;
         }
         if (!newPin.trim()) {
-            alert('New PIN cannot be empty.');
+            alert(t('new_pin_empty'));
             return;
         }
         if (newPin !== confirmPin) {
-            alert('New PIN and Confirm PIN do not match!');
+            alert(t('pin_mismatch'));
             return;
         }
 
         localStorage.setItem('adminPin', newPin);
-        alert('Admin PIN updated successfully! You will need this new PIN next time you log in.');
+        alert(t('pin_updated'));
         setCurrentPin('');
         setNewPin('');
         setConfirmPin('');
     };
 
     const handleClearDatabase = async () => {
-        if (window.confirm('⚠️ WARNING: This will delete ALL Sales History (Orders). Your Items and Categories will NOT be deleted. Are you sure?')) {
-            if (window.confirm('Please confirm again. This action CANNOT be undone!')) {
+        if (window.confirm(t('clear_warning1'))) {
+            if (window.confirm(t('clear_warning2'))) {
                 setClearing(true);
                 try {
                     await db.orders.clear();
                     await db.orderItems.clear();
-                    alert('Sales Data cleared successfully!');
+                    alert(t('sales_cleared'));
                 } catch (error) {
-                    alert('Error clearing database');
+                    alert(t('clear_error'));
                 } finally {
                     setClearing(false);
                 }
@@ -90,7 +90,7 @@ export default function Settings() {
             downloadAnchorNode.click();
             downloadAnchorNode.remove();
         } catch (error) {
-            alert("Error exporting backup.");
+            alert(t('export_error'));
         }
     };
 
@@ -108,20 +108,20 @@ export default function Settings() {
                     const data = JSON.parse(event.target?.result as string);
 
                     if (data.categories && data.items) {
-                        if (window.confirm('This will restore your data and merge it with any existing items. Do you wish to continue?')) {
+                        if (window.confirm(t('restore_confirm'))) {
                             setClearing(true);
                             if (data.categories.length) await db.categories.bulkPut(data.categories);
                             if (data.items.length) await db.items.bulkPut(data.items);
                             if (data.orders?.length) await db.orders.bulkPut(data.orders);
                             if (data.orderItems?.length) await db.orderItems.bulkPut(data.orderItems);
 
-                            alert('Backup restored successfully!');
+                            alert(t('restore_success'));
                         }
                     } else {
-                        alert('Invalid backup file format');
+                        alert(t('invalid_backup'));
                     }
                 } catch (error) {
-                    alert('Error importing backup file.');
+                    alert(t('import_error'));
                 } finally {
                     setClearing(false);
                 }

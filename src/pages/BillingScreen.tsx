@@ -45,7 +45,7 @@ export default function BillingScreen() {
         // For now we log indicating print success and clear cart
         console.log("Printing to ESC/POS...");
 
-        let receiptText = "COLLEGE CANTEEN\n";
+        let receiptText = `${t('college_canteen')}\n`;
         receiptText += "------------------------\n";
         cart.forEach(item => {
             const displayName = i18n.language === 'ta' && item.nameTa ? item.nameTa : item.name;
@@ -128,8 +128,8 @@ export default function BillingScreen() {
             <div className="w-full lg:w-96 flex flex-col bg-white rounded-2xl shadow-sm border border-slate-200 h-[60vh] lg:h-full flex-shrink-0 relative overflow-hidden">
                 {/* Header */}
                 <div className="p-5 border-b border-slate-100 bg-slate-800 text-white text-center rounded-t-2xl">
-                    <h2 className="text-2xl font-bold tracking-wider">COLLEGE CANTEEN</h2>
-                    <p className="text-slate-400 text-sm mt-1">Live Order Summary</p>
+                    <h2 className="text-2xl font-bold tracking-wider">{t('college_canteen')}</h2>
+                    <p className="text-slate-400 text-sm mt-1">{t('live_order_summary')}</p>
                 </div>
 
                 {/* Cart Items */}
@@ -137,7 +137,7 @@ export default function BillingScreen() {
                     {cart.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-slate-400 opacity-50 space-y-4">
                             <Trash2 size={48} />
-                            <p className="font-medium text-lg text-center leading-tight">Cart is empty<br />Tap items to add</p>
+                            <p className="font-medium text-lg text-center leading-tight">{t('cart_is_empty')}<br />{t('tap_items_to_add')}</p>
                         </div>
                     ) : (
                         cart.map((cartItem) => (

@@ -70,7 +70,7 @@ export default function Layout({ children, isAdmin, setIsAdmin }: LayoutProps) {
                 sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
             )}>
                 <div className="p-4 border-b border-slate-200 flex items-center justify-between">
-                    <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">Canteen POS</h1>
+                    <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">{t('canteen_pos')}</h1>
                     <button className="lg:hidden text-slate-500 hover:text-slate-800" onClick={() => setSidebarOpen(false)}>
                         <X size={24} />
                     </button>
@@ -117,7 +117,7 @@ export default function Layout({ children, isAdmin, setIsAdmin }: LayoutProps) {
                             className="flex items-center justify-center space-x-2 w-full py-3 bg-slate-800 text-white rounded-xl hover:bg-slate-700 font-bold transition-colors"
                         >
                             <LogIn size={20} />
-                            <span>Admin Login</span>
+                            <span>{t('admin_login')}</span>
                         </button>
                     ) : (
                         <button
@@ -140,7 +140,7 @@ export default function Layout({ children, isAdmin, setIsAdmin }: LayoutProps) {
                     <button onClick={() => setSidebarOpen(true)} className="p-2 -ml-2 text-slate-600">
                         <Menu size={24} />
                     </button>
-                    <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">Canteen POS</h1>
+                    <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">{t('canteen_pos')}</h1>
                     <button onClick={toggleLanguage} className="p-2 -mr-2 text-slate-600">
                         <Languages size={24} />
                     </button>

@@ -37,7 +37,7 @@ export default function CategoriesManagement() {
     };
 
     const handleDelete = async (id: string) => {
-        if (window.confirm('Are you sure you want to delete this category?')) {
+        if (window.confirm(t('confirm_delete_category'))) {
             await db.categories.delete(id);
             // Optional: Update items to remove categoryId
         }
