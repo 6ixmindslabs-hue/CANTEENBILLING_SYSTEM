@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { db } from '../db/db';
-import { Languages, Printer, Trash2, Database, Key, Eye, EyeOff, Download, Upload, Server } from 'lucide-react';
+import { Languages, Printer, Trash2, Database, Key, Eye, EyeOff, Download, Upload, Server, ImageIcon, CheckCircle } from 'lucide-react';
 
 export default function Settings() {
     const { t, i18n } = useTranslation();
     const [printerName, setPrinterName] = useState('Bluetooth_Printer_58mm');
     const [clearing, setClearing] = useState(false);
+    const [exporting, setExporting] = useState(false);
+    const [exportSuccess, setExportSuccess] = useState(false);
+    const [importSuccess, setImportSuccess] = useState(false);
 
     // PIN Reset state
     const [currentPin, setCurrentPin] = useState('');
@@ -68,33 +71,48 @@ export default function Settings() {
     };
 
     const handleExportBackup = async () => {
+        setExporting(true);
+        setExportSuccess(false);
         try {
             const categories = await db.categories.toArray();
             const items = await db.items.toArray();
             const orders = await db.orders.toArray();
             const orderItems = await db.orderItems.toArray();
+            const settings = await db.settings.toArray();
 
             const backupData = {
+                version: 2,
                 categories,
-                items,
+                items,          // includes base64 image data
                 orders,
                 orderItems,
-                timestamp: new Date().toISOString()
+                settings,
+                timestamp: new Date().toISOString(),
+                imageCount: items.filter(i => i.image).length
             };
 
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData));
+            // Use Blob for large files (images make JSON big)
+            const jsonBlob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(jsonBlob);
             const downloadAnchorNode = document.createElement('a');
-            downloadAnchorNode.setAttribute("href", dataStr);
-            downloadAnchorNode.setAttribute("download", `canteen_pos_backup_${new Date().toISOString().split('T')[0]}.json`);
+            downloadAnchorNode.setAttribute('href', url);
+            downloadAnchorNode.setAttribute('download', `canteen_backup_${new Date().toISOString().split('T')[0]}.json`);
             document.body.appendChild(downloadAnchorNode);
             downloadAnchorNode.click();
             downloadAnchorNode.remove();
+            URL.revokeObjectURL(url);
+
+            setExportSuccess(true);
+            setTimeout(() => setExportSuccess(false), 4000);
         } catch (error) {
             alert(t('export_error'));
+        } finally {
+            setExporting(false);
         }
     };
 
     const handleImportBackup = () => {
+        setImportSuccess(false);
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = '.json';
@@ -108,14 +126,18 @@ export default function Settings() {
                     const data = JSON.parse(event.target?.result as string);
 
                     if (data.categories && data.items) {
-                        if (window.confirm(t('restore_confirm'))) {
+                        const itemsWithImages = data.items.filter((i: any) => i.image).length;
+                        const confirmMsg = `${t('restore_confirm')}\n\n📦 ${data.categories.length} categories\n🍽️ ${data.items.length} items (${itemsWithImages} with images)\n🧾 ${data.orders?.length ?? 0} orders`;
+                        if (window.confirm(confirmMsg)) {
                             setClearing(true);
                             if (data.categories.length) await db.categories.bulkPut(data.categories);
                             if (data.items.length) await db.items.bulkPut(data.items);
                             if (data.orders?.length) await db.orders.bulkPut(data.orders);
                             if (data.orderItems?.length) await db.orderItems.bulkPut(data.orderItems);
+                            if (data.settings?.length) await db.settings.bulkPut(data.settings);
 
-                            alert(t('restore_success'));
+                            setImportSuccess(true);
+                            setTimeout(() => setImportSuccess(false), 4000);
                         }
                     } else {
                         alert(t('invalid_backup'));
@@ -262,33 +284,62 @@ export default function Settings() {
 
             {/* Data Backup & Restore */}
             <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
-                <h2 className="text-2xl font-bold mb-6 text-slate-800 flex items-center gap-3">
+                <h2 className="text-2xl font-bold mb-2 text-slate-800 flex items-center gap-3">
                     <Server className="text-blue-600" />
                     {t('data_backup_restore')}
                 </h2>
+                <p className="text-slate-500 text-sm mb-6 flex items-center gap-2">
+                    <ImageIcon size={14} className="text-blue-400 flex-shrink-0" />
+                    Backup includes all categories, items (with images), orders and settings.
+                </p>
                 <div className="flex flex-col md:flex-row gap-6">
                     <div className="flex-1 bg-blue-50/50 border border-blue-100 p-6 rounded-2xl">
                         <Download className="text-blue-500 mb-4" size={32} />
                         <h3 className="font-bold text-lg text-slate-800 mb-2">{t('export_backup')}</h3>
-                        <p className="text-slate-600 mb-6 text-sm h-10">{t('export_help_text')}</p>
+                        <p className="text-slate-600 mb-6 text-sm">
+                            {t('export_help_text')}<br />
+                            <span className="text-blue-600 font-medium text-xs">✓ Item images included as data</span>
+                        </p>
+                        {exportSuccess && (
+                            <div className="flex items-center gap-2 text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2 mb-3 text-sm font-bold">
+                                <CheckCircle size={16} /> Backup downloaded successfully!
+                            </div>
+                        )}
                         <button
                             onClick={handleExportBackup}
-                            className="w-full py-4 bg-white text-blue-600 border border-blue-200 font-bold rounded-xl hover:bg-blue-50 transition shadow-sm"
+                            disabled={exporting}
+                            className="w-full py-4 bg-white text-blue-600 border border-blue-200 font-bold rounded-xl hover:bg-blue-50 transition shadow-sm disabled:opacity-60 flex items-center justify-center gap-2"
                         >
-                            {t('export_backup')}
+                            {exporting ? (
+                                <><span className="animate-spin inline-block w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full"></span> Preparing.....</>
+                            ) : (
+                                <><Download size={18} /> {t('export_backup')}</>
+                            )}
                         </button>
                     </div>
 
                     <div className="flex-1 bg-emerald-50/50 border border-emerald-100 p-6 rounded-2xl">
                         <Upload className="text-emerald-500 mb-4" size={32} />
                         <h3 className="font-bold text-lg text-slate-800 mb-2">{t('import_backup')}</h3>
-                        <p className="text-slate-600 mb-6 text-sm h-10">{t('import_help_text')}</p>
+                        <p className="text-slate-600 mb-6 text-sm">
+                            {t('import_help_text')}<br />
+                            <span className="text-emerald-600 font-medium text-xs">✓ Item images restored automatically</span>
+                        </p>
+                        {importSuccess && (
+                            <div className="flex items-center gap-2 text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2 mb-3 text-sm font-bold">
+                                <CheckCircle size={16} /> Data restored successfully!
+                            </div>
+                        )}
                         <button
                             onClick={handleImportBackup}
                             disabled={clearing}
-                            className="w-full py-4 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition shadow-lg shadow-emerald-500/30 disabled:opacity-50"
+                            className="w-full py-4 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition shadow-lg shadow-emerald-500/30 disabled:opacity-50 flex items-center justify-center gap-2"
                         >
-                            {clearing ? t('clearing') : t('import_backup')}
+                            {clearing ? (
+                                <><span className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span> {t('clearing')}</>
+                            ) : (
+                                <><Upload size={18} /> {t('import_backup')}</>
+                            )}
                         </button>
                     </div>
                 </div>
