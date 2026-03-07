@@ -1,0 +1,12 @@
+src/App.tsx(2,20): error TS6133: 'useEffect' is declared but its value is never read.
+src/App.tsx(12,58): error TS2503: Cannot find namespace 'JSX'.
+src/components/Layout.tsx(84,59): error TS2322: Type '({ isActive }: any) => "text-blue-600" | "text-slate-400"' is not assignable to type 'string'.
+src/db/db.ts(1,17): error TS1484: 'Table' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/db/db.ts(2,10): error TS1484: 'Category' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/db/db.ts(2,20): error TS1484: 'Item' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/db/db.ts(2,26): error TS1484: 'Order' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/db/db.ts(2,33): error TS1484: 'OrderItem' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/db/db.ts(2,44): error TS1484: 'AppSettings' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.
+src/pages/BillingScreen.tsx(1,1): error TS6192: All imports in import declaration are unused.
+src/pages/Settings.tsx(4,48): error TS6133: 'AlertTriangle' is declared but its value is never read.
+src/store/useStore.ts(2,10): error TS1484: 'Item' is a type and must be imported using a type-only import when 'verbatimModuleSyntax' is enabled.

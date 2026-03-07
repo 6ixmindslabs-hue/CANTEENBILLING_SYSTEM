@@ -1,0 +1,315 @@
+import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { db } from '../db/db';
+import { Languages, Printer, Trash2, Database, Key, Eye, EyeOff, Download, Upload, Server } from 'lucide-react';
+
+export default function Settings() {
+    const { t, i18n } = useTranslation();
+    const [printerName, setPrinterName] = useState('Bluetooth_Printer_58mm');
+    const [clearing, setClearing] = useState(false);
+
+    // PIN Reset state
+    const [currentPin, setCurrentPin] = useState('');
+    const [newPin, setNewPin] = useState('');
+    const [confirmPin, setConfirmPin] = useState('');
+    const [showPins, setShowPins] = useState(false);
+
+    useEffect(() => {
+        // Load settings from Dexie (if implemented)
+    }, []);
+
+    const handleLanguageChange = (lang: string) => {
+        i18n.changeLanguage(lang);
+    };
+
+    const handleSavePrinter = () => {
+        alert(`Printer set to: ${printerName}`);
+    };
+
+    const handleChangePin = (e: React.FormEvent) => {
+        e.preventDefault();
+        const savedPin = localStorage.getItem('adminPin') || '1234';
+
+        if (currentPin !== savedPin) {
+            alert('Incorrect current PIN!');
+            return;
+        }
+        if (!newPin.trim()) {
+            alert('New PIN cannot be empty.');
+            return;
+        }
+        if (newPin !== confirmPin) {
+            alert('New PIN and Confirm PIN do not match!');
+            return;
+        }
+
+        localStorage.setItem('adminPin', newPin);
+        alert('Admin PIN updated successfully! You will need this new PIN next time you log in.');
+        setCurrentPin('');
+        setNewPin('');
+        setConfirmPin('');
+    };
+
+    const handleClearDatabase = async () => {
+        if (window.confirm('⚠️ WARNING: This will delete ALL Sales History (Orders). Your Items and Categories will NOT be deleted. Are you sure?')) {
+            if (window.confirm('Please confirm again. This action CANNOT be undone!')) {
+                setClearing(true);
+                try {
+                    await db.orders.clear();
+                    await db.orderItems.clear();
+                    alert('Sales Data cleared successfully!');
+                } catch (error) {
+                    alert('Error clearing database');
+                } finally {
+                    setClearing(false);
+                }
+            }
+        }
+    };
+
+    const handleExportBackup = async () => {
+        try {
+            const categories = await db.categories.toArray();
+            const items = await db.items.toArray();
+            const orders = await db.orders.toArray();
+            const orderItems = await db.orderItems.toArray();
+
+            const backupData = {
+                categories,
+                items,
+                orders,
+                orderItems,
+                timestamp: new Date().toISOString()
+            };
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", `canteen_pos_backup_${new Date().toISOString().split('T')[0]}.json`);
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        } catch (error) {
+            alert("Error exporting backup.");
+        }
+    };
+
+    const handleImportBackup = () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.onchange = (e) => {
+            const file = (e.target as HTMLInputElement).files?.[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                try {
+                    const data = JSON.parse(event.target?.result as string);
+
+                    if (data.categories && data.items) {
+                        if (window.confirm('This will restore your data and merge it with any existing items. Do you wish to continue?')) {
+                            setClearing(true);
+                            if (data.categories.length) await db.categories.bulkPut(data.categories);
+                            if (data.items.length) await db.items.bulkPut(data.items);
+                            if (data.orders?.length) await db.orders.bulkPut(data.orders);
+                            if (data.orderItems?.length) await db.orderItems.bulkPut(data.orderItems);
+
+                            alert('Backup restored successfully!');
+                        }
+                    } else {
+                        alert('Invalid backup file format');
+                    }
+                } catch (error) {
+                    alert('Error importing backup file.');
+                } finally {
+                    setClearing(false);
+                }
+            };
+            reader.readAsText(file);
+        };
+        input.click();
+    };
+
+    return (
+        <div className="max-w-4xl mx-auto space-y-6">
+            <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+                <h2 className="text-2xl font-bold mb-8 text-slate-800 flex items-center gap-3">
+                    <Languages className="text-blue-600" />
+                    {t('language')}
+                </h2>
+
+                <div className="grid grid-cols-2 gap-4">
+                    <button
+                        onClick={() => handleLanguageChange('en')}
+                        className={`p-6 rounded-2xl font-bold text-xl border-2 transition-all ${i18n.language === 'en'
+                            ? 'border-blue-500 bg-blue-50 text-blue-700'
+                            : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                            }`}
+                    >
+                        English
+                    </button>
+                    <button
+                        onClick={() => handleLanguageChange('ta')}
+                        className={`p-6 rounded-2xl font-bold text-xl border-2 transition-all ${i18n.language === 'ta'
+                            ? 'border-blue-500 bg-blue-50 text-blue-700'
+                            : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                            }`}
+                    >
+                        தமிழ் (Tamil)
+                    </button>
+                </div>
+            </div>
+
+            <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+                <h2 className="text-2xl font-bold mb-8 text-slate-800 flex items-center gap-3">
+                    <Printer className="text-blue-600" />
+                    {t('printer_configuration')}
+                </h2>
+
+                <div className="space-y-4">
+                    <label className="font-bold text-slate-600 ml-1">{t('bluetooth_printer_name')}</label>
+                    <div className="flex gap-4">
+                        <input
+                            type="text"
+                            value={printerName}
+                            onChange={(e) => setPrinterName(e.target.value)}
+                            className="flex-1 p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-lg"
+                        />
+                        <button
+                            onClick={handleSavePrinter}
+                            className="px-8 py-4 bg-slate-800 text-white font-bold rounded-xl hover:bg-slate-900 transition"
+                        >
+                            {t('save')}
+                        </button>
+                    </div>
+                    <p className="text-slate-500 text-sm">{t('printer_help_text')}</p>
+                </div>
+            </div>
+
+            {/* Admin PIN Reset */}
+            <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+                <h2 className="text-2xl font-bold mb-6 text-slate-800 flex items-center gap-3">
+                    <Key className="text-blue-600" />
+                    {t('security_settings')}
+                </h2>
+                <form onSubmit={handleChangePin} className="space-y-4 max-w-sm">
+                    <div className="relative">
+                        <label className="font-bold text-slate-600 block mb-1 ml-1">{t('current_pin')}</label>
+                        <div className="relative">
+                            <input
+                                type={showPins ? "text" : "password"}
+                                value={currentPin}
+                                onChange={(e) => setCurrentPin(e.target.value)}
+                                className="w-full p-4 pr-12 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-black tracking-widest text-center"
+                                placeholder="****"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPins(!showPins)}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
+                            >
+                                {showPins ? <EyeOff size={20} /> : <Eye size={20} />}
+                            </button>
+                        </div>
+                    </div>
+                    <div className="relative">
+                        <label className="font-bold text-slate-600 block mb-1 ml-1">{t('new_pin')}</label>
+                        <div className="relative">
+                            <input
+                                type={showPins ? "text" : "password"}
+                                value={newPin}
+                                onChange={(e) => setNewPin(e.target.value)}
+                                className="w-full p-4 pr-12 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-black tracking-widest text-center"
+                                placeholder="****"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPins(!showPins)}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
+                            >
+                                {showPins ? <EyeOff size={20} /> : <Eye size={20} />}
+                            </button>
+                        </div>
+                    </div>
+                    <div className="relative">
+                        <label className="font-bold text-slate-600 block mb-1 ml-1">{t('confirm_new_pin')}</label>
+                        <div className="relative">
+                            <input
+                                type={showPins ? "text" : "password"}
+                                value={confirmPin}
+                                onChange={(e) => setConfirmPin(e.target.value)}
+                                className="w-full p-4 pr-12 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-black tracking-widest text-center"
+                                placeholder="****"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPins(!showPins)}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
+                            >
+                                {showPins ? <EyeOff size={20} /> : <Eye size={20} />}
+                            </button>
+                        </div>
+                    </div>
+                    <button
+                        type="submit"
+                        className="w-full py-4 bg-blue-600 text-white font-black rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-500/30"
+                    >
+                        {t('update_admin_pin')}
+                    </button>
+                </form>
+            </div>
+
+            {/* Data Backup & Restore */}
+            <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+                <h2 className="text-2xl font-bold mb-6 text-slate-800 flex items-center gap-3">
+                    <Server className="text-blue-600" />
+                    {t('data_backup_restore')}
+                </h2>
+                <div className="flex flex-col md:flex-row gap-6">
+                    <div className="flex-1 bg-blue-50/50 border border-blue-100 p-6 rounded-2xl">
+                        <Download className="text-blue-500 mb-4" size={32} />
+                        <h3 className="font-bold text-lg text-slate-800 mb-2">{t('export_backup')}</h3>
+                        <p className="text-slate-600 mb-6 text-sm h-10">{t('export_help_text')}</p>
+                        <button
+                            onClick={handleExportBackup}
+                            className="w-full py-4 bg-white text-blue-600 border border-blue-200 font-bold rounded-xl hover:bg-blue-50 transition shadow-sm"
+                        >
+                            {t('export_backup')}
+                        </button>
+                    </div>
+
+                    <div className="flex-1 bg-emerald-50/50 border border-emerald-100 p-6 rounded-2xl">
+                        <Upload className="text-emerald-500 mb-4" size={32} />
+                        <h3 className="font-bold text-lg text-slate-800 mb-2">{t('import_backup')}</h3>
+                        <p className="text-slate-600 mb-6 text-sm h-10">{t('import_help_text')}</p>
+                        <button
+                            onClick={handleImportBackup}
+                            disabled={clearing}
+                            className="w-full py-4 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition shadow-lg shadow-emerald-500/30 disabled:opacity-50"
+                        >
+                            {clearing ? t('clearing') : t('import_backup')}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div className="bg-red-50 p-6 md:p-8 rounded-2xl border border-red-200">
+                <h2 className="text-2xl font-bold mb-4 text-red-700 flex items-center gap-3">
+                    <Database className="text-red-500" />
+                    {t('danger_zone')}
+                </h2>
+                <p className="text-red-600 mb-6 font-medium">{t('danger_warning')}</p>
+
+                <button
+                    onClick={handleClearDatabase}
+                    disabled={clearing}
+                    className="flex items-center gap-2 px-8 py-4 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition w-full md:w-auto"
+                >
+                    <Trash2 />
+                    {clearing ? t('clearing') : t('clear_sales_data')}
+                </button>
+            </div>
+        </div>
+    );
+}
