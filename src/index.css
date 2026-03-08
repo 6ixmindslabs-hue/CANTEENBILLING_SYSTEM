@@ -52,49 +52,95 @@ body {
   background: #94a3b8;
 }
 
-/* User Required Fixed Layout Classes - Optimized for Byjus Tab (480px+) */
+/* Tablet Optimized Stable Layout (max 1024px Centered) */
 @media (min-width: 480px) {
-  .sidebar-left {
-    position: fixed !important;
-    left: 0;
-    top: 0;
+
+  html,
+  body {
+    position: relative;
+    /* Unlock for margin: auto centering */
+    overflow: hidden;
+  }
+
+  .main-container {
+    width: 100%;
+    max-width: 1024px;
+    margin: 0 auto;
     height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.1);
+  }
+
+  .layout-wrapper {
+    display: flex;
+    flex: 1;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .sidebar-nav {
     width: 200px !important;
-    z-index: 50;
+    height: 100%;
+    flex-shrink: 0;
     border-right: 1px solid #e2e8f0;
+    background: white;
+    display: flex;
+    flex-direction: column;
   }
 
-  .sidebar-right {
-    position: fixed !important;
-    right: 0;
-    top: 0;
-    height: 100dvh;
-    width: 280px !important;
-    z-index: 40;
+  .main-content-area {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: #f1f5f9;
+  }
+
+  /* Specific to Billing Screen */
+  .billing-layout {
+    display: flex;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .product-section {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    padding: 16px;
+    background: #f8fafc;
+  }
+
+  .cart-sidebar {
+    width: 320px !important;
+    height: 100%;
+    flex-shrink: 0;
     border-left: 1px solid #e2e8f0;
+    background: white;
+    display: flex;
+    flex-direction: column;
   }
 
-  .main-content {
-    margin-left: 200px !important;
-    margin-right: 0px !important;
-    width: calc(100% - 200px) !important;
-    height: 100dvh !important;
-    overflow-y: auto !important;
-  }
-
-  /* When on the Billing page (home path), add right margin for the cart */
-  .main-content.has-right-sidebar {
-    margin-right: 280px !important;
-    width: calc(100% - 480px) !important;
+  .product-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
   }
 }
 
-/* Ensure only ONE scrollbar for the grid area */
-.main-content::-webkit-scrollbar {
+/* Scrollbar hiding while keeping scroll functionality */
+.no-scrollbar::-webkit-scrollbar {
   display: none;
 }
 
-.main-content {
+.no-scrollbar {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }

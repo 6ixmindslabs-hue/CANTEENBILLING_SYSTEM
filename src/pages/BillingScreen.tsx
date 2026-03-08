@@ -98,69 +98,71 @@ export default function BillingScreen() {
     };
 
     return (
-        <div className="flex flex-col h-full overflow-hidden">
-            {/* LEFT: Categories and Items Grid */}
-            <div className="flex-1 flex flex-col min-h-[50vh] lg:min-h-0 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                {/* Category Filter Scroll */}
-                <div className="flex gap-3 overflow-x-auto py-2.5 px-6 no-scrollbar border-b border-slate-100 bg-slate-50">
-                    <button
-                        onClick={() => setSelectedCategory(null)}
-                        className={`whitespace-nowrap px-6 py-3 rounded-2xl font-bold text-base transition-all ${selectedCategory === null
-                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
-                            : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-                            }`}
-                    >
-                        {t('all')}
-                    </button>
-
-                    {categories.map((cat) => (
+        <div className="billing-layout">
+            {/* LEFT: Categories and Items */}
+            <div className="product-section">
+                <div className="flex flex-col bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden shrink-0">
+                    {/* Category Filter Scroll */}
+                    <div className="flex gap-3 overflow-x-auto py-2.5 px-6 no-scrollbar border-b border-slate-100 bg-slate-50">
                         <button
-                            key={cat.id}
-                            onClick={() => setSelectedCategory(cat.id)}
-                            className={`whitespace-nowrap px-6 py-3 rounded-2xl font-bold text-base transition-all ${selectedCategory === cat.id
+                            onClick={() => setSelectedCategory(null)}
+                            className={`whitespace-nowrap px-6 py-3 rounded-2xl font-bold text-base transition-all ${selectedCategory === null
                                 ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
                                 : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
                                 }`}
                         >
-                            {i18n.language === 'ta' && cat.nameTa ? cat.nameTa : cat.name}
+                            {t('all')}
                         </button>
-                    ))}
-                </div>
 
-                {/* Item Grid */}
-                <div className="flex-1 overflow-y-auto p-6 bg-slate-50/50">
-                    {items.length === 0 ? (
-                        <div className="h-full flex flex-col items-center justify-center text-slate-400">
-                            <span className="text-xl font-medium">{t('no_items')}</span>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 pb-4">
-                            {items.map((item) => (
-                                <button
-                                    key={item.id}
-                                    onClick={() => addToCart(item)}
-                                    className="group flex flex-col bg-white rounded-2xl p-2.5 shadow-sm border border-slate-200 hover:border-blue-300 hover:shadow-lg transition-all active:scale-95 text-left h-40 relative overflow-hidden"
-                                >
-                                    <div className="w-full h-20 mb-1.5 rounded-xl overflow-hidden bg-slate-100 flex items-center justify-center">
-                                        {item.image ? (
-                                            <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                                        ) : (
-                                            <div className="text-3xl text-slate-300 font-bold">🍕</div>
-                                        )}
-                                    </div>
-                                    <h3 className="font-bold text-base text-slate-800 line-clamp-1 leading-tight">
-                                        {i18n.language === 'ta' && item.nameTa ? item.nameTa : item.name}
-                                    </h3>
-                                    <p className="text-lg font-extrabold text-blue-600 mt-auto">₹{item.price}</p>
-                                </button>
-                            ))}
-                        </div>
-                    )}
+                        {categories.map((cat) => (
+                            <button
+                                key={cat.id}
+                                onClick={() => setSelectedCategory(cat.id)}
+                                className={`whitespace-nowrap px-6 py-3 rounded-2xl font-bold text-base transition-all ${selectedCategory === cat.id
+                                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
+                                    : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                                    }`}
+                            >
+                                {i18n.language === 'ta' && cat.nameTa ? cat.nameTa : cat.name}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Item Grid */}
+                    <div className="flex-1 overflow-y-auto p-4 bg-slate-50/50">
+                        {items.length === 0 ? (
+                            <div className="h-full flex flex-col items-center justify-center text-slate-400">
+                                <span className="text-xl font-medium">{t('no_items')}</span>
+                            </div>
+                        ) : (
+                            <div className="product-grid p-4">
+                                {items.map((item) => (
+                                    <button
+                                        key={item.id}
+                                        onClick={() => addToCart(item)}
+                                        className="group flex flex-col bg-white rounded-2xl p-2.5 shadow-sm border border-slate-200 hover:border-blue-300 hover:shadow-lg transition-all active:scale-95 text-left h-40 relative overflow-hidden"
+                                    >
+                                        <div className="w-full h-20 mb-1.5 rounded-xl overflow-hidden bg-slate-100 flex items-center justify-center">
+                                            {item.image ? (
+                                                <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                            ) : (
+                                                <div className="text-3xl text-slate-300 font-bold">🍕</div>
+                                            )}
+                                        </div>
+                                        <h3 className="font-bold text-base text-slate-800 line-clamp-1 leading-tight">
+                                            {i18n.language === 'ta' && item.nameTa ? item.nameTa : item.name}
+                                        </h3>
+                                        <p className="text-lg font-extrabold text-blue-600 mt-auto">₹{item.price}</p>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 
-            {/* RIGHT: Bill Summary */}
-            <div className="sidebar-right w-full flex flex-col bg-white rounded-2xl sm:rounded-none shadow-sm sm:shadow-none border border-slate-200 h-full flex-shrink-0 relative overflow-hidden w-[280px]">
+            {/* RIGHT: Cart Summary */}
+            <div className="cart-sidebar">
                 {/* Header */}
                 <div className="p-3 border-b border-slate-100 bg-slate-800 text-white text-center rounded-t-2xl sm:rounded-none">
                     <h2 className="text-xl font-bold tracking-wider">{t('college_canteen')}</h2>
