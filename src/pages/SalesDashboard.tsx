@@ -215,26 +215,26 @@ export default function SalesDashboard() {
     };
 
     return (
-        <div className="max-w-7xl mx-auto space-y-6">
+        <div className="max-w-7xl mx-auto space-y-4 md:space-y-6">
 
             {/* Sales Report Generation Card */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="p-6 border-b border-slate-100 bg-slate-50 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-                    <h2 className="text-2xl font-black text-slate-800 flex items-center gap-3">
-                        <FileText className="text-blue-600" size={28} />
-                        {t('sales_report_builder')}
+            <div className="bg-white rounded-xl md:rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="p-4 md:p-6 border-b border-slate-100 bg-slate-50 flex flex-col sm:flex-row gap-3 md:gap-4 justify-between items-start sm:items-center">
+                    <h2 className="text-xl md:text-2xl font-black text-slate-800 flex items-center gap-2 md:gap-3">
+                        <FileText className="text-blue-600" size={24} />
+                        <span className="text-lg md:text-2xl">{t('sales_report_builder')}</span>
                     </h2>
                 </div>
 
-                <div className="p-6 md:p-8">
+                <div className="p-4 md:p-6 lg:p-8">
                     {/* Quick Filters */}
-                    <div className="mb-8">
-                        <div className="flex flex-wrap gap-3">
+                    <div className="mb-6 md:mb-8">
+                        <div className="flex flex-wrap gap-2 md:gap-3">
                             {filters.map(filter => (
                                 <button
                                     key={filter}
                                     onClick={() => handleFilterClick(filter)}
-                                    className={`px-5 py-2.5 rounded-full font-bold text-sm transition-all ${activeFilter === filter
+                                    className={`px-4 md:px-5 py-2 md:py-2.5 rounded-full font-bold text-xs md:text-sm transition-all ${activeFilter === filter
                                         ? 'bg-slate-800 text-white shadow-md'
                                         : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200'
                                         }`}
@@ -245,41 +245,41 @@ export default function SalesDashboard() {
                         </div>
                     </div>
 
-                    <div className="flex flex-col lg:flex-row gap-8 items-end">
-                        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+                    <div className="flex flex-col lg:flex-row gap-6 md:gap-8 items-end">
+                        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 w-full">
                             <div className="space-y-2">
-                                <label className="font-bold text-slate-600 block flex items-center gap-2">
-                                    <CalendarDays size={18} className="text-slate-400" />
+                                <label className="font-bold text-slate-600 text-sm md:text-base block flex items-center gap-2">
+                                    <CalendarDays size={16} className="text-slate-400 md:w-[18px] md:h-[18px]" />
                                     {t('from_date')}
                                 </label>
                                 <input
                                     type="date"
                                     value={startDate}
                                     onChange={(e) => handleDateChange(e.target.value, 'start')}
-                                    className="w-full p-4 bg-white border border-slate-300 rounded-xl text-slate-800 font-bold text-lg focus:ring-4 focus:ring-blue-500/20 active:border-blue-500 outline-none transition-all cursor-pointer shadow-sm"
+                                    className="w-full p-3 md:p-4 bg-white border border-slate-300 rounded-lg md:rounded-xl text-slate-800 font-bold text-base md:text-lg focus:ring-4 focus:ring-blue-500/20 active:border-blue-500 outline-none transition-all cursor-pointer shadow-sm"
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="font-bold text-slate-600 block flex items-center gap-2">
-                                    <CalendarDays size={18} className="text-slate-400" />
+                                <label className="font-bold text-slate-600 text-sm md:text-base block flex items-center gap-2">
+                                    <CalendarDays size={16} className="text-slate-400 md:w-[18px] md:h-[18px]" />
                                     {t('to_date')}
                                 </label>
                                 <input
                                     type="date"
                                     value={endDate}
                                     onChange={(e) => handleDateChange(e.target.value, 'end')}
-                                    className="w-full p-4 bg-white border border-slate-300 rounded-xl text-slate-800 font-bold text-lg focus:ring-4 focus:ring-blue-500/20 active:border-blue-500 outline-none transition-all cursor-pointer shadow-sm"
+                                    className="w-full p-3 md:p-4 bg-white border border-slate-300 rounded-lg md:rounded-xl text-slate-800 font-bold text-base md:text-lg focus:ring-4 focus:ring-blue-500/20 active:border-blue-500 outline-none transition-all cursor-pointer shadow-sm"
                                 />
                             </div>
                         </div>
 
-                        <div className="flex gap-4 w-full lg:w-auto">
+                        <div className="flex gap-3 md:gap-4 w-full lg:w-auto">
                             <button
                                 onClick={handlePrint}
-                                className="flex-none px-6 py-4 bg-slate-800 text-white font-black text-lg rounded-xl hover:bg-slate-900 transition-all flex items-center gap-3 shadow-lg"
+                                className="flex-1 lg:flex-none px-5 md:px-6 py-3 md:py-4 bg-slate-800 text-white font-black text-base md:text-lg rounded-lg md:rounded-xl hover:bg-slate-900 transition-all flex items-center justify-center gap-2 md:gap-3 shadow-lg"
                             >
-                                <Printer size={24} />
-                                <span className="hidden sm:inline">{t('print_receipt')}</span>
+                                <Printer size={20} className="md:w-6 md:h-6" />
+                                <span>{t('print_receipt')}</span>
                             </button>
                         </div>
                     </div>
@@ -287,65 +287,65 @@ export default function SalesDashboard() {
             </div>
 
             {/* Stats Cards (Controlled by Generated Report) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-gradient-to-br from-indigo-500 to-blue-700 text-white p-6 rounded-2xl shadow-lg border border-blue-400 relative overflow-hidden">
-                    <ShoppingBag className="absolute -right-6 -bottom-6 text-blue-400 opacity-20 w-48 h-48" />
-                    <h3 className="text-xl font-medium text-blue-100 mb-2">{t('total_orders')}</h3>
-                    <p className="text-5xl font-black text-white">{reportData.totalOrders}</p>
-                    <p className="text-blue-200 mt-2 font-medium">{t('all_time')}: {reportData.allTimeOrders}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                <div className="bg-gradient-to-br from-blue-500 to-blue-700 text-white p-5 md:p-6 rounded-xl md:rounded-2xl shadow-lg border border-blue-400 relative overflow-hidden">
+                    <ShoppingBag className="absolute -right-4 -bottom-4 md:-right-6 md:-bottom-6 text-blue-400 opacity-20 w-32 h-32 md:w-48 md:h-48" />
+                    <h3 className="text-lg md:text-xl font-medium text-blue-100 mb-1 md:mb-2">{t('total_orders')}</h3>
+                    <p className="text-4xl md:text-5xl font-black text-white">{reportData.totalOrders}</p>
+                    <p className="text-blue-200 mt-1.5 md:mt-2 font-medium text-sm md:text-base">{t('all_time')}: {reportData.allTimeOrders}</p>
                 </div>
 
-                <div className="bg-gradient-to-br from-emerald-500 to-teal-700 text-white p-6 rounded-2xl shadow-lg border border-emerald-400 relative overflow-hidden">
-                    <TrendingUp className="absolute -right-6 -bottom-6 text-emerald-400 opacity-20 w-48 h-48" />
-                    <h3 className="text-xl font-medium text-emerald-100 mb-2">{t('total_sales')}</h3>
-                    <p className="text-5xl font-black text-white">₹{reportData.totalSales}</p>
-                    <p className="text-emerald-200 mt-2 font-medium">{t('for_selected_period')}</p>
+                <div className="bg-gradient-to-br from-emerald-500 to-teal-700 text-white p-5 md:p-6 rounded-xl md:rounded-2xl shadow-lg border border-emerald-400 relative overflow-hidden">
+                    <TrendingUp className="absolute -right-4 -bottom-4 md:-right-6 md:-bottom-6 text-emerald-400 opacity-20 w-32 h-32 md:w-48 md:h-48" />
+                    <h3 className="text-lg md:text-xl font-medium text-emerald-100 mb-1 md:mb-2">{t('total_sales')}</h3>
+                    <p className="text-4xl md:text-5xl font-black text-white">₹{reportData.totalSales}</p>
+                    <p className="text-emerald-200 mt-1.5 md:mt-2 font-medium text-sm md:text-base">{t('for_selected_period')}</p>
                 </div>
             </div>
 
             {/* Detailed Sales Report Table */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="p-6 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-                    <h3 className="text-xl font-bold text-slate-800">
+            <div className="bg-white rounded-xl md:rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="p-4 md:p-6 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                    <h3 className="text-lg md:text-xl font-bold text-slate-800">
                         {t('itemized_sales_report')}
-                        <span className="block text-sm font-medium text-slate-500 mt-1">
+                        <span className="block text-xs md:text-sm font-medium text-slate-500 mt-1">
                             {formatShortDate(reportPeriod.start)} {t('to_word')} {formatShortDate(reportPeriod.end)}
                         </span>
                     </h3>
                 </div>
 
-                <div className="overflow-x-auto max-h-[600px] overflow-y-auto no-scrollbar">
-                    <table className="w-full text-left border-collapse min-w-[800px]">
+                <div className="overflow-x-auto max-h-[500px] md:max-h-[600px] overflow-y-auto no-scrollbar">
+                    <table className="w-full text-left border-collapse min-w-[600px]">
                         <thead className="sticky top-0 bg-slate-100 z-10 shadow-sm">
                             <tr className="text-slate-500 border-b border-slate-200">
-                                <th className="p-5 font-bold">{t('date_and_time')}</th>
-                                <th className="p-5 font-bold">{t('item')}</th>
-                                <th className="p-5 font-bold">{t('category')}</th>
-                                <th className="p-5 font-bold text-right">{t('qty')}</th>
-                                <th className="p-5 font-bold text-right">{t('price')}</th>
-                                <th className="p-5 font-bold text-right">{t('total')}</th>
+                                <th className="p-3 md:p-5 font-bold text-xs md:text-sm">{t('date_and_time')}</th>
+                                <th className="p-3 md:p-5 font-bold text-xs md:text-sm">{t('item')}</th>
+                                <th className="p-3 md:p-5 font-bold text-xs md:text-sm">{t('category')}</th>
+                                <th className="p-3 md:p-5 font-bold text-right text-xs md:text-sm">{t('qty')}</th>
+                                <th className="p-3 md:p-5 font-bold text-right text-xs md:text-sm">{t('price')}</th>
+                                <th className="p-3 md:p-5 font-bold text-right text-xs md:text-sm">{t('total')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {reportData.detailedSalesArray.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="p-16 text-center text-slate-400 font-medium text-lg">
+                                    <td colSpan={6} className="p-8 md:p-16 text-center text-slate-400 font-medium text-base md:text-lg">
                                         {t('no_sales_found')}
                                     </td>
                                 </tr>
                             ) : (
                                 reportData.detailedSalesArray.map((sale) => (
                                     <tr key={sale.cartItemId} className="hover:bg-slate-50 transition-colors">
-                                        <td className="p-5 text-slate-600 font-medium whitespace-nowrap">{new Date(sale.date).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</td>
-                                        <td className="p-5 font-bold text-slate-800">{sale.itemNameDisplay}</td>
-                                        <td className="p-5 text-slate-600">
-                                            <span className="px-3 py-1 bg-white shadow-sm border border-slate-200 rounded-lg text-sm font-bold whitespace-nowrap">
+                                        <td className="p-3 md:p-5 text-slate-600 font-medium whitespace-nowrap text-xs md:text-sm">{new Date(sale.date).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</td>
+                                        <td className="p-3 md:p-5 font-bold text-slate-800 text-xs md:text-base">{sale.itemNameDisplay}</td>
+                                        <td className="p-3 md:p-5 text-slate-600">
+                                            <span className="px-2 md:px-3 py-0.5 md:py-1 bg-white shadow-sm border border-slate-200 rounded-lg text-xs md:text-sm font-bold whitespace-nowrap">
                                                 {sale.categoryName}
                                             </span>
                                         </td>
-                                        <td className="p-5 text-right font-bold text-slate-700">{sale.quantity}</td>
-                                        <td className="p-5 text-right text-slate-600">₹{sale.price}</td>
-                                        <td className="p-5 text-right font-black text-blue-600">₹{sale.total}</td>
+                                        <td className="p-3 md:p-5 text-right font-bold text-slate-700 text-xs md:text-sm">{sale.quantity}</td>
+                                        <td className="p-3 md:p-5 text-right text-slate-600 text-xs md:text-sm">₹{sale.price}</td>
+                                        <td className="p-3 md:p-5 text-right font-black text-blue-600 text-xs md:text-base">₹{sale.total}</td>
                                     </tr>
                                 ))
                             )}

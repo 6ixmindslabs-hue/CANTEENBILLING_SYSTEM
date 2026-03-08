@@ -60,19 +60,19 @@ export default function Layout({ children, isAdmin, setIsAdmin }: LayoutProps) {
                 {/* Mobile Sidebar Overlay */}
                 {sidebarOpen && (
                     <div
-                        className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+                        className="fixed inset-0 bg-black/50 z-40 md:hidden"
                         onClick={() => setSidebarOpen(false)}
                     />
                 )}
 
                 {/* Sidebar */}
                 <aside className={clsx(
-                    "sidebar-nav transform transition-transform duration-300 ease-in-out sm:transform-none z-50",
-                    sidebarOpen ? "translate-x-0 fixed inset-y-0 left-0 w-[200px]" : "-translate-x-full fixed sm:translate-x-0 sm:relative w-[200px]"
+                    "sidebar-nav transform transition-transform duration-300 ease-in-out md:transform-none z-50",
+                    sidebarOpen ? "translate-x-0 fixed inset-y-0 left-0 w-[240px] sm:w-[200px]" : "-translate-x-full fixed md:translate-x-0 md:relative w-[200px]"
                 )}>
                     <div className="p-3 border-b border-slate-200 flex items-center justify-between">
-                        <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">{t('canteen_pos')}</h1>
-                        <button className="lg:hidden text-slate-500 hover:text-slate-800" onClick={() => setSidebarOpen(false)}>
+                        <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">{t('canteen_pos')}</h1>
+                        <button className="md:hidden text-slate-500 hover:text-slate-800" onClick={() => setSidebarOpen(false)}>
                             <X size={24} />
                         </button>
                     </div>
@@ -137,19 +137,19 @@ export default function Layout({ children, isAdmin, setIsAdmin }: LayoutProps) {
 
                 {/* Main Content */}
                 <main className="main-content-area flex-1">
-                    <header className="sm:hidden bg-white shadow-sm p-4 flex items-center justify-between z-10 shrink-0">
-                        <button onClick={() => setSidebarOpen(true)} className="p-2 -ml-2 text-slate-600">
+                    <header className="md:hidden bg-white shadow-sm p-3 sm:p-4 flex items-center justify-between z-10 shrink-0">
+                        <button onClick={() => setSidebarOpen(true)} className="p-2 -ml-2 text-slate-600 active:bg-slate-100 rounded-lg transition-colors">
                             <Menu size={24} />
                         </button>
-                        <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">{t('canteen_pos')}</h1>
-                        <button onClick={toggleLanguage} className="p-2 -mr-2 text-slate-600">
+                        <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">{t('canteen_pos')}</h1>
+                        <button onClick={toggleLanguage} className="p-2 -mr-2 text-slate-600 active:bg-slate-100 rounded-lg transition-colors">
                             <Languages size={24} />
                         </button>
                     </header>
 
                     <div className={clsx(
                         "flex-1 bg-slate-100 flex flex-col",
-                        location.pathname === '/' ? "overflow-hidden p-0" : "overflow-y-auto p-4 md:p-8"
+                        location.pathname === '/' ? "overflow-hidden p-0" : "overflow-y-auto p-3 sm:p-4 md:p-6 lg:p-8"
                     )}>
                         {children}
                     </div>
