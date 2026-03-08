@@ -33,11 +33,6 @@ body {
   height: 100%;
 }
 
-.print-btn {
-  position: relative;
-  z-index: 1000;
-}
-
 /* Scrollbar styling for POS */
 ::-webkit-scrollbar {
   width: 8px;
