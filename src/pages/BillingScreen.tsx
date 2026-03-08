@@ -102,10 +102,10 @@ export default function BillingScreen() {
             {/* LEFT: Categories and Items Grid */}
             <div className="flex-1 flex flex-col min-h-[50vh] lg:min-h-0 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                 {/* Category Filter Scroll */}
-                <div className="flex gap-3 overflow-x-auto py-4 px-6 no-scrollbar border-b border-slate-100 bg-slate-50">
+                <div className="flex gap-3 overflow-x-auto py-2.5 px-6 no-scrollbar border-b border-slate-100 bg-slate-50">
                     <button
                         onClick={() => setSelectedCategory(null)}
-                        className={`whitespace-nowrap px-6 py-4 rounded-2xl font-bold text-lg transition-all ${selectedCategory === null
+                        className={`whitespace-nowrap px-6 py-3 rounded-2xl font-bold text-base transition-all ${selectedCategory === null
                             ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
                             : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
                             }`}
@@ -117,7 +117,7 @@ export default function BillingScreen() {
                         <button
                             key={cat.id}
                             onClick={() => setSelectedCategory(cat.id)}
-                            className={`whitespace-nowrap px-6 py-4 rounded-2xl font-bold text-lg transition-all ${selectedCategory === cat.id
+                            className={`whitespace-nowrap px-6 py-3 rounded-2xl font-bold text-base transition-all ${selectedCategory === cat.id
                                 ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30'
                                 : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
                                 }`}
@@ -160,11 +160,11 @@ export default function BillingScreen() {
             </div>
 
             {/* RIGHT: Bill Summary */}
-            <div className="sidebar-right w-full flex flex-col bg-white rounded-2xl sm:rounded-none shadow-sm sm:shadow-none border border-slate-200 h-[60vh] flex-shrink-0 relative overflow-hidden">
+            <div className="sidebar-right w-full flex flex-col bg-white rounded-2xl sm:rounded-none shadow-sm sm:shadow-none border border-slate-200 h-[65vh] sm:h-full flex-shrink-0 relative overflow-hidden">
                 {/* Header */}
-                <div className="p-5 border-b border-slate-100 bg-slate-800 text-white text-center rounded-t-2xl">
-                    <h2 className="text-2xl font-bold tracking-wider">{t('college_canteen')}</h2>
-                    <p className="text-slate-400 text-sm mt-1">{t('live_order_summary')}</p>
+                <div className="p-3 border-b border-slate-100 bg-slate-800 text-white text-center rounded-t-2xl sm:rounded-none">
+                    <h2 className="text-xl font-bold tracking-wider">{t('college_canteen')}</h2>
+                    <p className="text-slate-400 text-[10px] mt-0.5">{t('live_order_summary')}</p>
                 </div>
 
                 {/* Cart Items */}
@@ -214,17 +214,17 @@ export default function BillingScreen() {
                 </div>
 
                 {/* Totals & Actions */}
-                <div className="p-5 border-t border-slate-200 bg-white">
-                    <div className="flex justify-between items-end mb-6">
-                        <span className="text-xl font-bold text-slate-500">{t('total')}</span>
-                        <span className="text-4xl font-extrabold text-slate-900 tracking-tight">₹{total()}</span>
+                <div className="p-3 border-t border-slate-200 bg-white">
+                    <div className="flex justify-between items-end mb-3">
+                        <span className="text-lg font-bold text-slate-500">{t('total')}</span>
+                        <span className="text-3xl font-extrabold text-slate-900 tracking-tight">₹{total()}</span>
                     </div>
 
-                    <div className="flex space-x-3">
+                    <div className="flex space-x-2">
                         <button
                             onClick={clearCart}
                             disabled={cart.length === 0}
-                            className="px-6 py-4 bg-red-100 text-red-600 font-bold rounded-xl hover:bg-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                            className="px-4 py-3 bg-red-100 text-red-600 font-bold rounded-xl hover:bg-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 text-sm"
                         >
                             {t('clear_bill')}
                         </button>
@@ -232,9 +232,9 @@ export default function BillingScreen() {
                         <button
                             onClick={handlePrint}
                             disabled={cart.length === 0}
-                            className="flex-1 flex items-center justify-center space-x-3 bg-green-500 text-white font-black text-xl py-4 rounded-xl hover:bg-green-600 transition-all shadow-lg shadow-green-500/30 disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-1 active:translate-y-0"
+                            className="flex-1 flex items-center justify-center space-x-2 bg-green-500 text-white font-black text-lg py-3 rounded-xl hover:bg-green-600 transition-all shadow-lg shadow-green-500/30 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
                         >
-                            <Printer size={28} />
+                            <Printer size={22} />
                             <span>{t('print_bill')}</span>
                         </button>
                     </div>

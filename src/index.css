@@ -47,6 +47,7 @@ body {
     left: 0;
     top: 0;
     height: 100vh;
+    height: 100dvh;
     width: 250px !important;
     z-index: 50;
   }
@@ -56,6 +57,7 @@ body {
     right: 0;
     top: 0;
     height: 100vh;
+    height: 100dvh;
     width: 320px !important;
     z-index: 40;
   }
@@ -64,6 +66,7 @@ body {
     margin-left: 250px !important;
     width: calc(100% - 250px) !important;
     height: 100vh !important;
+    height: 100dvh !important;
     overflow-y: auto !important;
   }
 

@@ -55,7 +55,7 @@ export default function Layout({ children, isAdmin, setIsAdmin }: LayoutProps) {
     ];
 
     return (
-        <div className="flex h-screen bg-slate-50 text-slate-800 font-sans overflow-hidden">
+        <div className="flex h-screen h-[100dvh] bg-slate-50 text-slate-800 font-sans overflow-hidden">
             {/* Mobile Sidebar Overlay */}
             {sidebarOpen && (
                 <div
@@ -69,14 +69,14 @@ export default function Layout({ children, isAdmin, setIsAdmin }: LayoutProps) {
                 "sidebar-left bg-white shadow-xl transform transition-transform duration-300 ease-in-out sm:transform-none flex flex-col z-50",
                 sidebarOpen ? "translate-x-0 fixed inset-y-0 left-0 w-[250px]" : "-translate-x-full fixed sm:translate-x-0 inset-y-0 left-0 w-[250px]"
             )}>
-                <div className="p-4 border-b border-slate-200 flex items-center justify-between">
-                    <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">{t('canteen_pos')}</h1>
+                <div className="p-3 border-b border-slate-200 flex items-center justify-between">
+                    <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">{t('canteen_pos')}</h1>
                     <button className="lg:hidden text-slate-500 hover:text-slate-800" onClick={() => setSidebarOpen(false)}>
                         <X size={24} />
                     </button>
                 </div>
 
-                <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+                <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
                     {links.map((link) => {
                         const Icon = link.icon;
                         return (
@@ -85,7 +85,7 @@ export default function Layout({ children, isAdmin, setIsAdmin }: LayoutProps) {
                                 to={link.to}
                                 onClick={() => setSidebarOpen(false)}
                                 className={({ isActive }) => clsx(
-                                    "flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200",
+                                    "flex items-center space-x-3 px-3 py-2 rounded-xl transition-all duration-200",
                                     isActive
                                         ? "bg-blue-50 text-blue-700 shadow-sm"
                                         : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
@@ -93,8 +93,8 @@ export default function Layout({ children, isAdmin, setIsAdmin }: LayoutProps) {
                             >
                                 {({ isActive }) => (
                                     <>
-                                        <Icon size={20} className={isActive ? "text-blue-600" : "text-slate-400"} />
-                                        <span className="font-semibold text-lg">{link.name}</span>
+                                        <Icon size={18} className={isActive ? "text-blue-600" : "text-slate-400"} />
+                                        <span className="font-semibold text-base">{link.name}</span>
                                     </>
                                 )}
                             </NavLink>
@@ -102,21 +102,21 @@ export default function Layout({ children, isAdmin, setIsAdmin }: LayoutProps) {
                     })}
                 </nav>
 
-                <div className="p-4 border-t border-slate-200 flex flex-col space-y-3">
+                <div className="p-3 border-t border-slate-200 flex flex-col space-y-2">
                     <button
                         onClick={toggleLanguage}
-                        className="flex items-center justify-center space-x-2 w-full py-3 bg-slate-100 rounded-xl hover:bg-slate-200 text-slate-700 font-bold transition-colors"
+                        className="flex items-center justify-center space-x-2 w-full py-2 bg-slate-100 rounded-xl hover:bg-slate-200 text-slate-700 font-bold transition-colors text-sm"
                     >
-                        <Languages size={20} />
+                        <Languages size={18} />
                         <span>{i18n.language === 'en' ? 'தமிழ்' : 'English'}</span>
                     </button>
 
                     {!isAdmin ? (
                         <button
                             onClick={() => setShowPinModal(true)}
-                            className="flex items-center justify-center space-x-2 w-full py-3 bg-slate-800 text-white rounded-xl hover:bg-slate-700 font-bold transition-colors"
+                            className="flex items-center justify-center space-x-2 w-full py-2 bg-slate-800 text-white rounded-xl hover:bg-slate-700 font-bold transition-colors text-sm"
                         >
-                            <LogIn size={20} />
+                            <LogIn size={18} />
                             <span>{t('admin_login')}</span>
                         </button>
                     ) : (
@@ -125,9 +125,9 @@ export default function Layout({ children, isAdmin, setIsAdmin }: LayoutProps) {
                                 setIsAdmin(false);
                                 navigate('/');
                             }}
-                            className="flex items-center justify-center space-x-2 w-full py-3 border border-red-200 text-red-600 rounded-xl hover:bg-red-50 font-bold transition-colors"
+                            className="flex items-center justify-center space-x-2 w-full py-2 border border-red-200 text-red-600 rounded-xl hover:bg-red-50 font-bold transition-colors text-sm"
                         >
-                            <LogOut size={20} />
+                            <LogOut size={18} />
                             <span>{t('logout')}</span>
                         </button>
                     )}
