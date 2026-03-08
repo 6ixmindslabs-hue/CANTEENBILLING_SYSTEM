@@ -12,13 +12,25 @@
   }
 }
 
+html,
 body {
+  height: 100dvh;
+  width: 100vw;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  position: fixed;
+  /* Prevents bounce and ensures fixed layout stays fixed */
   background-color: var(--background);
   color: var(--foreground);
-  margin: 0;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   user-select: none;
-  /* Good for POS touch screens */
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#root {
+  height: 100%;
 }
 
 /* Scrollbar styling for POS */

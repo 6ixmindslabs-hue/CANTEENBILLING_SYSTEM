@@ -139,9 +139,9 @@ export default function BillingScreen() {
                                 <button
                                     key={item.id}
                                     onClick={() => addToCart(item)}
-                                    className="group flex flex-col bg-white rounded-2xl p-3 shadow-sm border border-slate-200 hover:border-blue-300 hover:shadow-lg transition-all active:scale-95 text-left h-44 relative overflow-hidden"
+                                    className="group flex flex-col bg-white rounded-2xl p-2.5 shadow-sm border border-slate-200 hover:border-blue-300 hover:shadow-lg transition-all active:scale-95 text-left h-40 relative overflow-hidden"
                                 >
-                                    <div className="w-full h-24 mb-2 rounded-xl overflow-hidden bg-slate-100 flex items-center justify-center">
+                                    <div className="w-full h-20 mb-1.5 rounded-xl overflow-hidden bg-slate-100 flex items-center justify-center">
                                         {item.image ? (
                                             <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                                         ) : (
@@ -160,7 +160,7 @@ export default function BillingScreen() {
             </div>
 
             {/* RIGHT: Bill Summary */}
-            <div className="sidebar-right w-full flex flex-col bg-white rounded-2xl sm:rounded-none shadow-sm sm:shadow-none border border-slate-200 h-[65vh] sm:h-full flex-shrink-0 relative overflow-hidden w-[280px]">
+            <div className="sidebar-right w-full flex flex-col bg-white rounded-2xl sm:rounded-none shadow-sm sm:shadow-none border border-slate-200 h-full flex-shrink-0 relative overflow-hidden w-[280px]">
                 {/* Header */}
                 <div className="p-3 border-b border-slate-100 bg-slate-800 text-white text-center rounded-t-2xl sm:rounded-none">
                     <h2 className="text-xl font-bold tracking-wider">{t('college_canteen')}</h2>
@@ -214,8 +214,8 @@ export default function BillingScreen() {
                 </div>
 
                 {/* Totals & Actions */}
-                <div className="p-3 border-t border-slate-200 bg-white">
-                    <div className="flex justify-between items-end mb-3">
+                <div className="p-2 border-t border-slate-200 bg-white">
+                    <div className="flex justify-between items-end mb-1.5">
                         <span className="text-lg font-bold text-slate-500">{t('total')}</span>
                         <span className="text-3xl font-extrabold text-slate-900 tracking-tight">₹{total()}</span>
                     </div>

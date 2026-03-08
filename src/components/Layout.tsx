@@ -55,7 +55,7 @@ export default function Layout({ children, isAdmin, setIsAdmin }: LayoutProps) {
     ];
 
     return (
-        <div className="flex h-screen h-[100dvh] bg-slate-50 text-slate-800 font-sans overflow-hidden">
+        <div className="flex h-full bg-slate-50 text-slate-800 font-sans overflow-hidden">
             {/* Mobile Sidebar Overlay */}
             {sidebarOpen && (
                 <div
