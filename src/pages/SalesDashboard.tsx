@@ -158,95 +158,60 @@ export default function SalesDashboard() {
     };
 
     const handlePrint = () => {
-        const printWindow = document.createElement('iframe');
-        printWindow.style.position = 'absolute';
-        printWindow.style.top = '-1000px';
-        document.body.appendChild(printWindow);
+        const printContainer = document.createElement('div');
+        printContainer.id = 'print-container';
 
-        const printDoc = printWindow.contentWindow?.document;
-        if (printDoc) {
-            let catHtml = '';
-            let hasCats = false;
-            categories.forEach(cat => {
-                const catSales = reportData.categorySalesMap[cat.id] || 0;
-                if (catSales > 0) {
-                    hasCats = true;
-                    const catNameText = i18n.language === 'ta' && cat.nameTa ? cat.nameTa : cat.name;
-                    catHtml += `<div class="flex-between"><span>${catNameText}</span><span>Rs.${catSales}</span></div>`;
-                }
-            });
-            const unkSales = reportData.categorySalesMap['unknown'] || 0;
-            if (unkSales > 0) {
+        let catHtml = '';
+        let hasCats = false;
+        categories.forEach(cat => {
+            const catSales = reportData.categorySalesMap[cat.id] || 0;
+            if (catSales > 0) {
                 hasCats = true;
-                catHtml += `<div class="flex-between"><span>Uncategorized</span><span>Rs.${unkSales}</span></div>`;
+                const catNameText = i18n.language === 'ta' && cat.nameTa ? cat.nameTa : cat.name;
+                catHtml += `<div style="display: flex; justify-content: space-between; margin-bottom: 3px;"><span>${catNameText}</span><span>Rs.${catSales}</span></div>`;
             }
-            if (!hasCats) {
-                catHtml = '<div class="text-center">No sales</div>';
-            }
-
-            printDoc.open();
-            printDoc.write(`
-                <html>
-                <head>
-                    <title>Report - ${formatShortDate(reportPeriod.start)}</title>
-                    <style>
-                        @page { margin: 0; size: 58mm auto; }
-                        body {
-                            font-family: 'monospace';
-                            width: 48mm;
-                            margin: 0 auto;
-                            padding: 10px 0;
-                            font-size: 11px;
-                            color: #000;
-                        }
-                        .text-center { text-align: center; }
-                        .font-bold { font-weight: bold; }
-                        .text-lg { font-size: 13px; }
-                        .divider { border-bottom: 1px dashed #000; margin: 6px 0; }
-                        .flex-between { display: flex; justify-content: space-between; margin-bottom: 3px; }
-                        .title { margin-bottom: 4px; font-weight: bold; text-align: center;}
-                    </style>
-                </head>
-                <body>
-                    <div class="text-center font-bold text-lg">
-                        SALES REPORT
-                    </div>
-                    <div class="text-center">
-                        ${formatShortDate(reportPeriod.start)} to ${formatShortDate(reportPeriod.end)}
-                    </div>
-                    
-                    <div class="divider"></div>
-                    
-                    <div class="flex-between font-bold">
-                        <span>Orders:</span>
-                        <span>${reportData.totalOrders}</span>
-                    </div>
-                    <div class="flex-between font-bold">
-                        <span>Total Sales:</span>
-                        <span>Rs.${reportData.totalSales}</span>
-                    </div>
-
-                    <div class="divider"></div>
-                    <div class="title">CATEGORY SALES</div>
-                    <div class="divider"></div>
-                    
-                    ${catHtml}
-
-                    <div class="divider"></div>
-                    <div class="text-center">
-                        Printed: ${new Date().toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
-                    </div>
-                </body>
-                </html>
-            `);
-            printDoc.close();
-
-            printWindow.contentWindow?.focus();
-            setTimeout(() => {
-                printWindow.contentWindow?.print();
-                document.body.removeChild(printWindow);
-            }, 500);
+        });
+        const unkSales = reportData.categorySalesMap['unknown'] || 0;
+        if (unkSales > 0) {
+            hasCats = true;
+            catHtml += `<div style="display: flex; justify-content: space-between; margin-bottom: 3px;"><span>Uncategorized</span><span>Rs.${unkSales}</span></div>`;
         }
+        if (!hasCats) {
+            catHtml = '<div style="text-align: center;">No sales</div>';
+        }
+
+        printContainer.innerHTML = `
+            <div style="font-family: 'Courier New', Courier, monospace; width: 58mm; padding: 5px; font-size: 11px; color: #000; background: #fff;">
+                <div style="text-align: center; font-weight: bold; font-size: 13px; margin-bottom: 5px;">SALES REPORT</div>
+                <div style="text-align: center; margin-bottom: 5px;">${formatShortDate(reportPeriod.start)} to ${formatShortDate(reportPeriod.end)}</div>
+                <div style="border-top: 1px dashed #000; margin: 6px 0;"></div>
+                <div style="display: flex; justify-content: space-between; font-weight: bold;">
+                    <span>Orders:</span>
+                    <span>${reportData.totalOrders}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-weight: bold;">
+                    <span>Total Sales:</span>
+                    <span>Rs.${reportData.totalSales}</span>
+                </div>
+                <div style="border-top: 1px dashed #000; margin: 6px 0;"></div>
+                <div style="font-weight: bold; text-align: center; margin-bottom: 4px;">CATEGORY SALES</div>
+                <div style="border-top: 1px dashed #000; margin: 6px 0;"></div>
+                ${catHtml}
+                <div style="border-top: 1px dashed #000; margin: 6px 0;"></div>
+                <div style="text-align: center; font-size: 10px;">
+                    Printed: ${new Date().toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                </div>
+            </div>
+        `;
+        document.body.appendChild(printContainer);
+
+        setTimeout(() => {
+            window.print();
+            setTimeout(() => {
+                const containerToRemove = document.getElementById('print-container');
+                if (containerToRemove) document.body.removeChild(containerToRemove);
+            }, 500);
+        }, 100);
     };
 
     return (

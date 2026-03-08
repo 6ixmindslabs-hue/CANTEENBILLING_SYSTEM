@@ -1,12 +1,14 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useStore } from '../store/useStore';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
-import { Printer, Trash2, Plus, Minus } from 'lucide-react';
+import { Printer, Trash2, Plus, Minus, Eye, X } from 'lucide-react';
 
 export default function BillingScreen() {
     const { t, i18n } = useTranslation();
     const { cart, addToCart, increaseQuantity, decreaseQuantity, removeFromCart, clearCart, total, selectedCategory, setSelectedCategory } = useStore();
+    const [showPreview, setShowPreview] = useState(false);
 
     const categories = useLiveQuery(() => db.categories.toArray()) || [];
     const items = useLiveQuery(() => {
@@ -42,103 +44,63 @@ export default function BillingScreen() {
         }
 
         // 2. Print via Browser Print API formatted for 58mm
-        const printWindow = document.createElement('iframe');
-        printWindow.style.position = 'absolute';
-        printWindow.style.top = '-1000px';
-        document.body.appendChild(printWindow);
+        const printContainer = document.createElement('div');
+        printContainer.id = 'print-container';
 
-        const printDoc = printWindow.contentWindow?.document;
-        if (printDoc) {
-            printDoc.open();
-            printDoc.write(`
-                <html>
-                <head>
-                    <title>Print Receipt</title>
-                    <style>
-                        @page { margin: 0; size: 58mm auto; }
-                        body {
-                            font-family: 'monospace';
-                            width: 48mm; /* Leave small margin inside 58mm */
-                            margin: 0 auto;
-                            padding: 10px 0;
-                            font-size: 12px;
-                            color: #000;
-                        }
-                        .text-center { text-align: center; }
-                        .font-bold { font-weight: bold; }
-                        .text-lg { font-size: 14px; }
-                        .divider { border-bottom: 1px dashed #000; margin: 8px 0; }
-                        table { w-full; border-collapse: collapse; width: 100%; }
-                        th, td { text-align: left; padding: 2px 0; }
-                        .text-right { text-align: right; }
-                        .text-center { text-align: center; }
-                        .item-name { width: 50%; max-width: 24mm; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-                        .qty { width: 15%; text-align: center; }
-                        .price { width: 35%; text-align: right; }
-                        .total-row { display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-top: 5px; }
-                    </style>
-                </head>
-                <body>
-                    <div class="text-center font-bold text-lg">
-                        ${t('college_canteen')}
-                    </div>
-                    <div class="text-center">
-                        ${new Date().toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
-                    </div>
-                    
-                    <div class="divider"></div>
-                    
-                    <table>
-                        <thead>
-                            <tr>
-                                <th class="item-name">Item</th>
-                                <th class="qty">Qty</th>
-                                <th class="price">Amt</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${cart.map(item => {
-                const displayName = i18n.language === 'ta' && item.nameTa ? item.nameTa : item.name;
-                return `
-                                <tr>
-                                    <td class="item-name">${displayName}</td>
-                                    <td class="qty">${item.quantity}</td>
-                                    <td class="price">${item.price * item.quantity}</td>
-                                </tr>`;
-            }).join('')}
-                        </tbody>
-                    </table>
-                    
-                    <div class="divider"></div>
-                    
-                    <div class="total-row">
-                        <span>Total:</span>
-                        <span>Rs.${orderTotal}</span>
-                    </div>
-                    
-                    <div class="divider"></div>
-                    
-                    <div class="text-center">
-                        Thank You!
-                    </div>
-                </body>
-                </html>
-            `);
-            printDoc.close();
+        // Ensure no images can be injected (pure text mapping)
+        const cartRows = cart.map(item => {
+            const displayName = i18n.language === 'ta' && item.nameTa ? item.nameTa : item.name;
+            return `
+            <tr>
+                <td style="width: 50%; padding: 2px 0;">${displayName}</td>
+                <td style="width: 15%; text-align: center; padding: 2px 0;">${item.quantity}</td>
+                <td style="width: 35%; text-align: right; padding: 2px 0;">${item.price * item.quantity}</td>
+            </tr>`;
+        }).join('');
 
-            printWindow.contentWindow?.focus();
+        printContainer.innerHTML = `
+            <div style="font-family: 'Courier New', Courier, monospace; width: 58mm; padding: 5px; font-size: 13px; color: #000; background: #fff;">
+                <div style="text-align: center; font-weight: bold; font-size: 15px; margin-bottom: 5px;">${t('college_canteen')}</div>
+                <div style="text-align: center; font-size: 11px; margin-bottom: 5px;">${new Date().toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</div>
+                <div style="border-top: 1px dashed #000; margin: 5px 0;"></div>
+                <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left; border-bottom: 1px dashed #000;">Item</th>
+                            <th style="text-align: center; border-bottom: 1px dashed #000;">Qty</th>
+                            <th style="text-align: right; border-bottom: 1px dashed #000;">Price</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${cartRows}
+                    </tbody>
+                </table>
+                <div style="border-top: 1px dashed #000; margin: 5px 0;"></div>
+                <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px;">
+                    <span>TOTAL:</span>
+                    <span>Rs.${orderTotal}</span>
+                </div>
+                <div style="border-top: 1px dashed #000; margin: 5px 0;"></div>
+                <div style="text-align: center; margin-top: 10px; font-weight: bold;">Thank you!</div>
+                <div style="border-top: 1px dashed #000; margin: 5px 0;"></div>
+            </div>
+        `;
+        document.body.appendChild(printContainer);
+
+        setTimeout(() => {
+            window.print();
             setTimeout(() => {
-                printWindow.contentWindow?.print();
-                document.body.removeChild(printWindow);
-            }, 500); // Give time for styles to render
-        }
+                const containerToRemove = document.getElementById('print-container');
+                if (containerToRemove) document.body.removeChild(containerToRemove);
+            }, 500);
+        }, 100);
 
         // 3. Clear Bill
         clearCart();
     };
 
     return (
-        <div className="flex flex-col lg:flex-row gap-4 h-full">
+        <div className="flex flex-col sm:block h-full">
             {/* LEFT: Categories and Items Grid */}
             <div className="flex-1 flex flex-col min-h-[50vh] lg:min-h-0 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                 {/* Category Filter Scroll */}
@@ -200,7 +162,7 @@ export default function BillingScreen() {
             </div>
 
             {/* RIGHT: Bill Summary */}
-            <div className="w-full lg:w-96 flex flex-col bg-white rounded-2xl shadow-sm border border-slate-200 h-[60vh] lg:h-full flex-shrink-0 relative overflow-hidden">
+            <div className="sidebar-right w-full flex flex-col bg-white rounded-2xl sm:rounded-none shadow-sm sm:shadow-none border border-slate-200 h-[60vh] flex-shrink-0 relative overflow-hidden">
                 {/* Header */}
                 <div className="p-5 border-b border-slate-100 bg-slate-800 text-white text-center rounded-t-2xl">
                     <h2 className="text-2xl font-bold tracking-wider">{t('college_canteen')}</h2>
@@ -269,6 +231,14 @@ export default function BillingScreen() {
                             {t('clear_bill')}
                         </button>
                         <button
+                            onClick={() => setShowPreview(true)}
+                            disabled={cart.length === 0}
+                            className="px-6 py-4 bg-blue-100 text-blue-600 font-bold rounded-xl hover:bg-blue-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                            title={t('preview')}
+                        >
+                            <Eye size={24} />
+                        </button>
+                        <button
                             onClick={handlePrint}
                             disabled={cart.length === 0}
                             className="flex-1 flex items-center justify-center space-x-3 bg-green-500 text-white font-black text-xl py-4 rounded-xl hover:bg-green-600 transition-all shadow-lg shadow-green-500/30 disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-1 active:translate-y-0"
@@ -279,6 +249,74 @@ export default function BillingScreen() {
                     </div>
                 </div>
             </div>
+
+            {/* Bill Preview Modal */}
+            {showPreview && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm flex flex-col max-h-[90vh] overflow-hidden">
+                        <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                            <h3 className="text-xl font-bold text-slate-800">{t('bill_preview')}</h3>
+                            <button onClick={() => setShowPreview(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-500">
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-4 flex justify-center bg-slate-100">
+                            {/* Paper Simulation */}
+                            <div className="bg-white shadow-xl p-4 w-[58mm] min-h-[100mm] text-slate-900" style={{ fontFamily: "'Courier New', Courier, monospace" }}>
+                                <div className="text-center font-bold text-lg mb-1 leading-tight">{t('college_canteen')}</div>
+                                <div className="text-center text-[10px] mb-3">{new Date().toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</div>
+
+                                <div className="border-t border-dashed border-slate-900 my-2"></div>
+
+                                <table className="w-full text-xs border-collapse">
+                                    <thead>
+                                        <tr className="border-b border-dashed border-slate-900">
+                                            <th className="text-left py-1">Item</th>
+                                            <th className="text-center py-1">Qty</th>
+                                            <th className="text-right py-1">Price</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {cart.map(item => (
+                                            <tr key={item.cartItemId}>
+                                                <td className="py-1">{i18n.language === 'ta' && item.nameTa ? item.nameTa : item.name}</td>
+                                                <td className="text-center py-1">{item.quantity}</td>
+                                                <td className="text-right py-1">{item.price * item.quantity}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+
+                                <div className="border-t border-dashed border-slate-900 my-2"></div>
+
+                                <div className="flex justify-between font-bold text-sm">
+                                    <span>TOTAL:</span>
+                                    <span>Rs.{total()}</span>
+                                </div>
+
+                                <div className="border-t border-dashed border-slate-900 my-2"></div>
+
+                                <div className="text-center mt-6 font-bold text-sm">Thank you!</div>
+                                <div className="border-t border-dashed border-slate-900 my-2"></div>
+                            </div>
+                        </div>
+
+                        <div className="p-4 bg-white border-t border-slate-100">
+                            <button
+                                onClick={() => {
+                                    setShowPreview(false);
+                                    handlePrint();
+                                }}
+                                className="w-full py-4 bg-green-600 text-white rounded-2xl font-black text-xl shadow-lg hover:bg-green-700 transition-all flex items-center justify-center gap-3"
+                            >
+                                <Printer size={24} />
+                                {t('print_now')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
