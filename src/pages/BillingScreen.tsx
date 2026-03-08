@@ -1,14 +1,12 @@
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useStore } from '../store/useStore';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
-import { Printer, Trash2, Plus, Minus, Eye, X } from 'lucide-react';
+import { Printer, Trash2, Plus, Minus } from 'lucide-react';
 
 export default function BillingScreen() {
     const { t, i18n } = useTranslation();
     const { cart, addToCart, increaseQuantity, decreaseQuantity, removeFromCart, clearCart, total, selectedCategory, setSelectedCategory } = useStore();
-    const [showPreview, setShowPreview] = useState(false);
 
     const categories = useLiveQuery(() => db.categories.toArray()) || [];
     const items = useLiveQuery(() => {
@@ -230,14 +228,7 @@ export default function BillingScreen() {
                         >
                             {t('clear_bill')}
                         </button>
-                        <button
-                            onClick={() => setShowPreview(true)}
-                            disabled={cart.length === 0}
-                            className="px-6 py-4 bg-blue-100 text-blue-600 font-bold rounded-xl hover:bg-blue-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-                            title={t('preview')}
-                        >
-                            <Eye size={24} />
-                        </button>
+
                         <button
                             onClick={handlePrint}
                             disabled={cart.length === 0}
@@ -250,73 +241,7 @@ export default function BillingScreen() {
                 </div>
             </div>
 
-            {/* Bill Preview Modal */}
-            {showPreview && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm flex flex-col max-h-[90vh] overflow-hidden">
-                        <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                            <h3 className="text-xl font-bold text-slate-800">{t('bill_preview')}</h3>
-                            <button onClick={() => setShowPreview(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-500">
-                                <X size={24} />
-                            </button>
-                        </div>
 
-                        <div className="flex-1 overflow-y-auto p-4 flex justify-center bg-slate-100">
-                            {/* Paper Simulation */}
-                            <div className="bg-white shadow-xl p-4 w-[58mm] min-h-[100mm] text-slate-900" style={{ fontFamily: "'Courier New', Courier, monospace" }}>
-                                <div className="text-center font-bold text-lg mb-1 leading-tight">{t('college_canteen')}</div>
-                                <div className="text-center text-[10px] mb-3">{new Date().toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</div>
-
-                                <div className="border-t border-dashed border-slate-900 my-2"></div>
-
-                                <table className="w-full text-xs border-collapse">
-                                    <thead>
-                                        <tr className="border-b border-dashed border-slate-900">
-                                            <th className="text-left py-1">Item</th>
-                                            <th className="text-center py-1">Qty</th>
-                                            <th className="text-right py-1">Price</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {cart.map(item => (
-                                            <tr key={item.cartItemId}>
-                                                <td className="py-1">{i18n.language === 'ta' && item.nameTa ? item.nameTa : item.name}</td>
-                                                <td className="text-center py-1">{item.quantity}</td>
-                                                <td className="text-right py-1">{item.price * item.quantity}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-
-                                <div className="border-t border-dashed border-slate-900 my-2"></div>
-
-                                <div className="flex justify-between font-bold text-sm">
-                                    <span>TOTAL:</span>
-                                    <span>Rs.{total()}</span>
-                                </div>
-
-                                <div className="border-t border-dashed border-slate-900 my-2"></div>
-
-                                <div className="text-center mt-6 font-bold text-sm">Thank you!</div>
-                                <div className="border-t border-dashed border-slate-900 my-2"></div>
-                            </div>
-                        </div>
-
-                        <div className="p-4 bg-white border-t border-slate-100">
-                            <button
-                                onClick={() => {
-                                    setShowPreview(false);
-                                    handlePrint();
-                                }}
-                                className="w-full py-4 bg-green-600 text-white rounded-2xl font-black text-xl shadow-lg hover:bg-green-700 transition-all flex items-center justify-center gap-3"
-                            >
-                                <Printer size={24} />
-                                {t('print_now')}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }
