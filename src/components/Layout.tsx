@@ -67,7 +67,7 @@ export default function Layout({ children, isAdmin, setIsAdmin }: LayoutProps) {
             {/* Sidebar */}
             <aside className={clsx(
                 "sidebar-left bg-white shadow-xl transform transition-transform duration-300 ease-in-out sm:transform-none flex flex-col z-50",
-                sidebarOpen ? "translate-x-0 fixed inset-y-0 left-0 w-[250px]" : "-translate-x-full fixed sm:translate-x-0 inset-y-0 left-0 w-[250px]"
+                sidebarOpen ? "translate-x-0 fixed inset-y-0 left-0 w-[200px]" : "-translate-x-full fixed sm:translate-x-0 inset-y-0 left-0 w-[200px]"
             )}>
                 <div className="p-3 border-b border-slate-200 flex items-center justify-between">
                     <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">{t('canteen_pos')}</h1>
@@ -146,7 +146,7 @@ export default function Layout({ children, isAdmin, setIsAdmin }: LayoutProps) {
                     </button>
                 </header>
 
-                <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-4 lg:p-6 bg-slate-100">
+                <div className="flex-1 overflow-hidden p-3 bg-slate-100 flex flex-col">
                     {children}
                 </div>
             </main>
