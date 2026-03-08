@@ -16,10 +16,7 @@ export default function BillingScreen() {
         return db.items.toArray();
     }, [selectedCategory]) || [];
 
-    const handlePrint = async () => {
-        if (cart.length === 0) return;
-
-        // 1. Save to DB
+    const saveOrderToDb = async () => {
         const orderId = crypto.randomUUID();
         const orderTotal = total();
 
@@ -40,12 +37,47 @@ export default function BillingScreen() {
                 price: item.price
             });
         }
+    };
 
-        // 2. Print via Browser Print API formatted for 58mm
+    const handlePrintBill = async () => {
+        if (!cart || cart.length === 0) {
+            alert(t('cart_is_empty'));
+            return;
+        }
+
+        await saveOrderToDb();
+
+        const receiptText = `
+${t('college_canteen')}
+-----------------------
+${new Date().toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+
+${cart.map((item) => {
+            const displayName = i18n.language === 'ta' && item.nameTa ? item.nameTa : item.name;
+            return `${displayName.padEnd(15)} x${item.quantity}  Rs.${item.price * item.quantity}`;
+        }).join("\n")}
+
+-----------------------
+TOTAL: Rs.${total()}
+-----------------------
+Thank you!
+`;
+
+        window.location.href = "rawbt:" + encodeURIComponent(receiptText);
+        clearCart();
+    };
+
+    const handlePrintReceipt = async () => {
+        if (!cart || cart.length === 0) {
+            alert(t('cart_is_empty'));
+            return;
+        }
+
+        await saveOrderToDb();
+
         const printContainer = document.createElement('div');
         printContainer.id = 'print-container';
 
-        // Ensure no images can be injected (pure text mapping)
         const cartRows = cart.map(item => {
             const displayName = i18n.language === 'ta' && item.nameTa ? item.nameTa : item.name;
             return `
@@ -61,7 +93,7 @@ export default function BillingScreen() {
                 <div style="text-align: center; font-weight: bold; font-size: 15px; margin-bottom: 5px;">${t('college_canteen')}</div>
                 <div style="text-align: center; font-size: 11px; margin-bottom: 5px;">${new Date().toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</div>
                 <div style="border-top: 1px dashed #000; margin: 5px 0;"></div>
-                <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
                     <thead>
                         <tr>
                             <th style="text-align: left; border-bottom: 1px dashed #000;">Item</th>
@@ -74,9 +106,9 @@ export default function BillingScreen() {
                     </tbody>
                 </table>
                 <div style="border-top: 1px dashed #000; margin: 5px 0;"></div>
-                <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px;">
+                <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 13px;">
                     <span>TOTAL:</span>
-                    <span>Rs.${orderTotal}</span>
+                    <span>Rs.${total()}</span>
                 </div>
                 <div style="border-top: 1px dashed #000; margin: 5px 0;"></div>
                 <div style="text-align: center; margin-top: 10px; font-weight: bold;">Thank you!</div>
@@ -93,7 +125,6 @@ export default function BillingScreen() {
             }, 500);
         }, 100);
 
-        // 3. Clear Bill
         clearCart();
     };
 
@@ -222,21 +253,35 @@ export default function BillingScreen() {
                         <span className="text-3xl font-extrabold text-slate-900 tracking-tight">₹{total()}</span>
                     </div>
 
-                    <div className="flex space-x-2">
-                        <button
-                            onClick={clearCart}
-                            disabled={cart.length === 0}
-                            className="px-4 py-3 bg-red-100 text-red-600 font-bold rounded-xl hover:bg-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 text-sm"
-                        >
-                            {t('clear_bill')}
-                        </button>
+                    <div className="flex flex-col gap-2">
+                        <div className="flex space-x-2">
+                            <button
+                                type="button"
+                                onClick={clearCart}
+                                disabled={cart.length === 0}
+                                className="flex-1 py-3 bg-red-100 text-red-600 font-bold rounded-xl hover:bg-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-xs"
+                            >
+                                {t('clear_bill')}
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={handlePrintReceipt}
+                                disabled={cart.length === 0}
+                                className="print-btn flex-1 flex items-center justify-center space-x-1 bg-blue-500 text-white font-bold text-xs py-3 rounded-xl hover:bg-blue-600 transition-all shadow-md disabled:opacity-50 active:scale-95"
+                            >
+                                <Printer size={16} />
+                                <span>{t('print_receipt')}</span>
+                            </button>
+                        </div>
 
                         <button
-                            onClick={handlePrint}
+                            type="button"
+                            onClick={handlePrintBill}
                             disabled={cart.length === 0}
-                            className="flex-1 flex items-center justify-center space-x-2 bg-green-500 text-white font-black text-lg py-3 rounded-xl hover:bg-green-600 transition-all shadow-lg shadow-green-500/30 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
+                            className="print-btn w-full flex items-center justify-center space-x-2 bg-green-500 text-white font-black text-lg py-4 rounded-xl hover:bg-green-600 transition-all shadow-lg shadow-green-500/30 disabled:opacity-50 active:scale-95"
                         >
-                            <Printer size={22} />
+                            <Printer size={24} />
                             <span>{t('print_bill')}</span>
                         </button>
                     </div>
