@@ -42,105 +42,86 @@ export default function BillingScreen() {
         }
 
         // 2. Print via Browser Print API formatted for 58mm
-        const printWindow = document.createElement('iframe');
-        printWindow.style.position = 'absolute';
-        printWindow.style.top = '-1000px';
-        document.body.appendChild(printWindow);
+        const printContainer = document.createElement('div');
+        printContainer.id = 'print-container';
 
-        const printDoc = printWindow.contentWindow?.document;
-        if (printDoc) {
-            printDoc.open();
-            printDoc.write(`
-                <html>
-                <head>
-                    <title>Print Receipt</title>
-                    <style>
-                        @page { margin: 0; size: 58mm auto; }
-                        body {
-                            font-family: 'monospace';
-                            width: 48mm; /* Leave small margin inside 58mm */
-                            margin: 0 auto;
-                            padding: 10px 0;
-                            font-size: 12px;
-                            color: #000;
-                        }
-                        .text-center { text-align: center; }
-                        .font-bold { font-weight: bold; }
-                        .text-lg { font-size: 14px; }
-                        .divider { border-bottom: 1px dashed #000; margin: 8px 0; }
-                        table { w-full; border-collapse: collapse; width: 100%; }
-                        th, td { text-align: left; padding: 2px 0; }
-                        .text-right { text-align: right; }
-                        .text-center { text-align: center; }
-                        .item-name { width: 50%; max-width: 24mm; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-                        .qty { width: 15%; text-align: center; }
-                        .price { width: 35%; text-align: right; }
-                        .total-row { display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; margin-top: 5px; }
-                    </style>
-                </head>
-                <body>
-                    <div class="text-center font-bold text-lg">
-                        ${t('college_canteen')}
-                    </div>
-                    <div class="text-center">
-                        ${new Date().toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
-                    </div>
-                    
-                    <div class="divider"></div>
-                    
-                    <table>
-                        <thead>
-                            <tr>
-                                <th class="item-name">Item</th>
-                                <th class="qty">Qty</th>
-                                <th class="price">Amt</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${cart.map(item => {
-                const displayName = i18n.language === 'ta' && item.nameTa ? item.nameTa : item.name;
-                return `
-                                <tr>
-                                    <td class="item-name">${displayName}</td>
-                                    <td class="qty">${item.quantity}</td>
-                                    <td class="price">${item.price * item.quantity}</td>
-                                </tr>`;
-            }).join('')}
-                        </tbody>
-                    </table>
-                    
-                    <div class="divider"></div>
-                    
-                    <div class="total-row">
-                        <span>Total:</span>
-                        <span>Rs.${orderTotal}</span>
-                    </div>
-                    
-                    <div class="divider"></div>
-                    
-                    <div class="text-center">
-                        Thank You!
-                    </div>
-                </body>
-                </html>
-            `);
-            printDoc.close();
+        // Ensure no images can be injected (pure text mapping)
+        const cartRows = cart.map(item => {
+            const displayName = i18n.language === 'ta' && item.nameTa ? item.nameTa : item.name;
+            return `
+            <tr>
+                <td style="width: 50%; font-family: monospace;">${displayName}</td>
+                <td style="width: 15%; text-align: center; font-family: monospace;">${item.quantity}</td>
+                <td style="width: 35%; text-align: right; font-family: monospace;">${item.price * item.quantity}</td>
+            </tr>`;
+        }).join('');
 
-            printWindow.contentWindow?.focus();
+        printContainer.innerHTML = `
+            <style>
+                @page { margin: 0; size: 58mm auto; }
+                #print-container {
+                    font-family: 'Courier New', Courier, monospace;
+                    width: 58mm;
+                    margin: 0;
+                    padding: 5px;
+                    font-size: 13px;
+                    color: #000;
+                    background: #fff;
+                }
+                .print-divider {
+                    border-top: 1px dashed #000;
+                    margin: 5px 0;
+                }
+                .print-center { text-align: center; }
+                .print-table { width: 100%; border-collapse: collapse; }
+                .print-table th, .print-table td { text-align: left; padding: 2px 0; }
+                .print-table .print-right { text-align: right; }
+            </style>
+            <div class="print-divider"></div>
+            <div class="print-center">
+                <strong>${t('college_canteen')}</strong><br/>
+                ${new Date().toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+            </div>
+            <div class="print-divider"></div>
+            <table class="print-table">
+                <thead>
+                    <tr>
+                        <th style="font-family: monospace;">Item</th>
+                        <th class="print-center" style="font-family: monospace;">Qty</th>
+                        <th class="print-right" style="font-family: monospace;">Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${cartRows}
+                </tbody>
+            </table>
+            <div class="print-divider"></div>
+            <div style="display: flex; justify-content: space-between; font-weight: bold; font-family: monospace;">
+                <span>TOTAL:</span>
+                <span>Rs.${orderTotal}</span>
+            </div>
+            <div class="print-divider"></div>
+            <div class="print-center" style="font-family: monospace;">Thank you!</div>
+            <div class="print-divider"></div>
+        `;
+        document.body.appendChild(printContainer);
+
+        setTimeout(() => {
+            window.print();
             setTimeout(() => {
-                printWindow.contentWindow?.print();
-                document.body.removeChild(printWindow);
-            }, 500); // Give time for styles to render
-        }
+                const containerToRemove = document.getElementById('print-container');
+                if (containerToRemove) document.body.removeChild(containerToRemove);
+            }, 1000);
+        }, 100);
 
         // 3. Clear Bill
         clearCart();
     };
 
     return (
-        <div className="flex flex-col lg:flex-row gap-4 h-full">
+        <div className="flex flex-col md:block h-full">
             {/* LEFT: Categories and Items Grid */}
-            <div className="flex-1 flex flex-col min-h-[50vh] lg:min-h-0 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="flex flex-col bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden min-h-[50vh] md:min-h-0 h-full">
                 {/* Category Filter Scroll */}
                 <div className="flex gap-3 overflow-x-auto py-4 px-6 no-scrollbar border-b border-slate-100 bg-slate-50">
                     <button
@@ -200,7 +181,7 @@ export default function BillingScreen() {
             </div>
 
             {/* RIGHT: Bill Summary */}
-            <div className="w-full lg:w-96 flex flex-col bg-white rounded-2xl shadow-sm border border-slate-200 h-[60vh] lg:h-full flex-shrink-0 relative overflow-hidden">
+            <div className="sidebar-right w-full flex flex-col bg-white rounded-2xl md:rounded-none shadow-sm md:shadow-none border border-slate-200 h-[60vh] flex-shrink-0 relative overflow-hidden">
                 {/* Header */}
                 <div className="p-5 border-b border-slate-100 bg-slate-800 text-white text-center rounded-t-2xl">
                     <h2 className="text-2xl font-bold tracking-wider">{t('college_canteen')}</h2>

@@ -66,8 +66,8 @@ export default function Layout({ children, isAdmin, setIsAdmin }: LayoutProps) {
 
             {/* Sidebar */}
             <aside className={clsx(
-                "fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white shadow-xl transform transition-transform duration-300 ease-in-out lg:transform-none lg:shadow-md flex flex-col",
-                sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+                "sidebar-left bg-white shadow-xl transform transition-transform duration-300 ease-in-out md:transform-none flex flex-col z-50",
+                sidebarOpen ? "translate-x-0 fixed inset-y-0 left-0 w-[250px]" : "-translate-x-full fixed md:translate-x-0 inset-y-0 left-0 w-[250px]"
             )}>
                 <div className="p-4 border-b border-slate-200 flex items-center justify-between">
                     <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">{t('canteen_pos')}</h1>
@@ -135,8 +135,8 @@ export default function Layout({ children, isAdmin, setIsAdmin }: LayoutProps) {
             </aside>
 
             {/* Main Content */}
-            <main className="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50">
-                <header className="lg:hidden bg-white shadow-sm p-4 flex items-center justify-between z-10">
+            <main className={clsx("flex flex-col flex-1 bg-slate-50 main-content", location.pathname === '/' ? 'has-right-sidebar' : '')}>
+                <header className="md:hidden bg-white shadow-sm p-4 flex items-center justify-between z-10 shrink-0">
                     <button onClick={() => setSidebarOpen(true)} className="p-2 -ml-2 text-slate-600">
                         <Menu size={24} />
                     </button>
@@ -146,7 +146,7 @@ export default function Layout({ children, isAdmin, setIsAdmin }: LayoutProps) {
                     </button>
                 </header>
 
-                <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-4 lg:p-6 bg-slate-100">
+                <div className="flex-1 p-4 lg:p-6 bg-slate-100 min-h-full pb-32 md:pb-6">
                     {children}
                 </div>
             </main>
