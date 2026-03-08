@@ -195,24 +195,50 @@ body {
 
 /* Printing logic for thermal printers (58mm) */
 @media print {
+  @page {
+    size: 58mm auto;
+    margin: 0;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+  }
+
   body>*:not(#print-container) {
     display: none !important;
   }
 
-  img,
-  svg,
+  img:not(#print-container img),
+  svg:not(#print-container svg),
   .no-print {
     display: none !important;
   }
 
   #print-container {
     display: block !important;
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 58mm;
-    background: white;
-    color: black;
-    font-family: 'Courier New', Courier, monospace;
+    position: relative !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 58mm !important;
+    min-height: 50mm !important;
+    background: white !important;
+    color: black !important;
+    font-family: 'Courier New', Courier, monospace !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    page-break-inside: avoid !important;
+  }
+
+  #print-container * {
+    visibility: visible !important;
+    color: black !important;
   }
 }

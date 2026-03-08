@@ -168,37 +168,37 @@ export default function SalesDashboard() {
             if (catSales > 0) {
                 hasCats = true;
                 const catNameText = i18n.language === 'ta' && cat.nameTa ? cat.nameTa : cat.name;
-                catHtml += `<div style="display: flex; justify-content: space-between; margin-bottom: 3px;"><span>${catNameText}</span><span>Rs.${catSales}</span></div>`;
+                catHtml += `<div style="display: flex; justify-content: space-between; margin-bottom: 4px; padding: 2px 0; color: #000;"><span>${catNameText}</span><span>₹${catSales}</span></div>`;
             }
         });
         const unkSales = reportData.categorySalesMap['unknown'] || 0;
         if (unkSales > 0) {
             hasCats = true;
-            catHtml += `<div style="display: flex; justify-content: space-between; margin-bottom: 3px;"><span>Uncategorized</span><span>Rs.${unkSales}</span></div>`;
+            catHtml += `<div style="display: flex; justify-content: space-between; margin-bottom: 4px; padding: 2px 0; color: #000;"><span>Uncategorized</span><span>₹${unkSales}</span></div>`;
         }
         if (!hasCats) {
-            catHtml = '<div style="text-align: center;">No sales</div>';
+            catHtml = '<div style="text-align: center; color: #000; padding: 4px 0;">No sales</div>';
         }
 
         printContainer.innerHTML = `
-            <div style="font-family: 'Courier New', Courier, monospace; width: 58mm; padding: 5px; font-size: 11px; color: #000; background: #fff;">
-                <div style="text-align: center; font-weight: bold; font-size: 13px; margin-bottom: 5px;">SALES REPORT</div>
-                <div style="text-align: center; margin-bottom: 5px;">${formatShortDate(reportPeriod.start)} to ${formatShortDate(reportPeriod.end)}</div>
-                <div style="border-top: 1px dashed #000; margin: 6px 0;"></div>
-                <div style="display: flex; justify-content: space-between; font-weight: bold;">
+            <div style="font-family: 'Courier New', Courier, monospace; width: 100%; max-width: 58mm; padding: 10px; font-size: 11px; color: #000 !important; background: #fff !important; box-sizing: border-box;">
+                <div style="text-align: center; font-weight: bold; font-size: 13px; margin-bottom: 8px; color: #000;">SALES REPORT</div>
+                <div style="text-align: center; margin-bottom: 8px; color: #000;">${formatShortDate(reportPeriod.start)} to ${formatShortDate(reportPeriod.end)}</div>
+                <div style="border-top: 1px dashed #000; margin: 8px 0;"></div>
+                <div style="display: flex; justify-content: space-between; font-weight: bold; padding: 2px 0; color: #000;">
                     <span>Orders:</span>
                     <span>${reportData.totalOrders}</span>
                 </div>
-                <div style="display: flex; justify-content: space-between; font-weight: bold;">
+                <div style="display: flex; justify-content: space-between; font-weight: bold; padding: 2px 0; color: #000;">
                     <span>Total Sales:</span>
-                    <span>Rs.${reportData.totalSales}</span>
+                    <span>₹${reportData.totalSales}</span>
                 </div>
-                <div style="border-top: 1px dashed #000; margin: 6px 0;"></div>
-                <div style="font-weight: bold; text-align: center; margin-bottom: 4px;">CATEGORY SALES</div>
-                <div style="border-top: 1px dashed #000; margin: 6px 0;"></div>
+                <div style="border-top: 1px dashed #000; margin: 8px 0;"></div>
+                <div style="font-weight: bold; text-align: center; margin-bottom: 6px; color: #000;">CATEGORY SALES</div>
+                <div style="border-top: 1px dashed #000; margin: 8px 0;"></div>
                 ${catHtml}
-                <div style="border-top: 1px dashed #000; margin: 6px 0;"></div>
-                <div style="text-align: center; font-size: 10px;">
+                <div style="border-top: 1px dashed #000; margin: 8px 0;"></div>
+                <div style="text-align: center; font-size: 10px; color: #000; padding: 4px 0;">
                     Printed: ${new Date().toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
                 </div>
             </div>
@@ -210,8 +210,8 @@ export default function SalesDashboard() {
             setTimeout(() => {
                 const containerToRemove = document.getElementById('print-container');
                 if (containerToRemove) document.body.removeChild(containerToRemove);
-            }, 500);
-        }, 100);
+            }, 1000);
+        }, 200);
     };
 
     return (
