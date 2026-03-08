@@ -147,7 +147,10 @@ export default function Layout({ children, isAdmin, setIsAdmin }: LayoutProps) {
                         </button>
                     </header>
 
-                    <div className="flex-1 overflow-hidden p-0 bg-slate-100 flex flex-col">
+                    <div className={clsx(
+                        "flex-1 bg-slate-100 flex flex-col",
+                        location.pathname === '/' ? "overflow-hidden p-0" : "overflow-y-auto p-4 md:p-8"
+                    )}>
                         {children}
                     </div>
                 </main>
