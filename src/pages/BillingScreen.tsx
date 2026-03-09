@@ -81,6 +81,7 @@ export default function BillingScreen() {
                 <div style="border-top: 1px dashed #000; margin: 8px 0;"></div>
                 <div style="text-align: center; margin-top: 10px; font-weight: bold; color: #000;">Thank you!</div>
                 <div style="border-top: 1px dashed #000; margin: 8px 0;"></div>
+                <div style="text-align: center; font-size: 11px; font-weight: bold; color: #000; padding: 4px 0;">Made with 6ixmindslabs</div>
             </div>
         `;
         document.body.appendChild(printContainer);
