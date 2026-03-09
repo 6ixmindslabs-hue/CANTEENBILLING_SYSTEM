@@ -42,6 +42,9 @@ export default function BillingScreen() {
         }
 
         // 2. Print via Browser Print API formatted for 58mm
+        const oldContainer = document.getElementById('print-container');
+        if (oldContainer) document.body.removeChild(oldContainer);
+
         const printContainer = document.createElement('div');
         printContainer.id = 'print-container';
 
@@ -88,11 +91,13 @@ export default function BillingScreen() {
 
         setTimeout(() => {
             window.print();
+            // Increased timeout to 10s so Android print spooler (like RawBT) 
+            // has enough time to read the DOM before it's destroyed.
             setTimeout(() => {
                 const containerToRemove = document.getElementById('print-container');
                 if (containerToRemove) document.body.removeChild(containerToRemove);
-            }, 1000);
-        }, 200);
+            }, 10000);
+        }, 500);
 
         // 3. Clear Bill
         clearCart();
