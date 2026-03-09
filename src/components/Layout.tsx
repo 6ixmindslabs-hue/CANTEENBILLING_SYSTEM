@@ -133,6 +133,11 @@ export default function Layout({ children, isAdmin, setIsAdmin }: LayoutProps) {
                             </button>
                         )}
                     </div>
+
+                    {/* Sidebar Watermark */}
+                    <div className="pb-3 pt-1 text-center opacity-40">
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">Powered by 6ixmindslabs</span>
+                    </div>
                 </aside>
 
                 {/* Main Content */}
@@ -185,6 +190,11 @@ export default function Layout({ children, isAdmin, setIsAdmin }: LayoutProps) {
                                     </button>
                                 </div>
                             </form>
+
+                            {/* Admin Login Modal Watermark */}
+                            <div className="mt-6 text-center opacity-40">
+                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Powered by 6ixmindslabs</span>
+                            </div>
                         </div>
                     </div>
                 )}
