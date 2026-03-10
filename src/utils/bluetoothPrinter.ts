@@ -90,12 +90,12 @@ export async function connectPrinter(): Promise<string> {
 // Plain text only — no bold, no font-size commands.
 
 const ESC = 0x1b;
-const GS  = 0x1d;
+const GS = 0x1d;
 
 const CMD = {
-    init:     [ESC, 0x40],              // Initialize printer
-    feed3:    [ESC, 0x64, 0x03],        // Paper feed 3 lines
-    cutPaper: [GS,  0x56, 0x42, 0x00], // Full cut
+    init: [ESC, 0x40],              // Initialize printer
+    feed3: [ESC, 0x64, 0x03],        // Paper feed 3 lines
+    cutPaper: [GS, 0x56, 0x42, 0x00], // Full cut
 };
 
 // ─────────────── Byte Builder ───────────────
@@ -119,10 +119,10 @@ function bytes(...parts: (number[] | Uint8Array | string)[]): Uint8Array {
 // 58mm printer in normal font = 32 chars per line
 // Columns: ITEM(15) + QTY(7) + AMOUNT(10) = 32
 
-const LINE_W   = 32;
+const LINE_W = 32;
 const COL_NAME = 15;
-const COL_QTY  = 7;
-const COL_AMT  = 10;
+const COL_QTY = 7;
+const COL_AMT = 10;
 
 /** Center a string within LINE_W using spaces */
 function center(str: string): string {
@@ -224,6 +224,17 @@ async function sendChunked(
         await characteristic.writeValue(data.slice(i, i + CHUNK_SIZE));
         await new Promise(r => setTimeout(r, 30));
     }
+}
+
+/**
+ * Send arbitrary raw bytes to the connected BLE printer.
+ * Useful for custom receipts that don't use the standard receipt builder.
+ */
+export async function sendRawBytes(data: Uint8Array): Promise<void> {
+    if (!cachedCharacteristic) {
+        throw new Error('No printer connected. Tap "Connect Printer" first.');
+    }
+    await sendChunked(cachedCharacteristic, data);
 }
 
 /**

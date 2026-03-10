@@ -1,8 +1,15 @@
 import { useTranslation } from 'react-i18next';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
-import { TrendingUp, ShoppingBag, Printer, CalendarDays, FileText } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { TrendingUp, ShoppingBag, Printer, CalendarDays, FileText, Bluetooth, BluetoothOff, BluetoothSearching } from 'lucide-react';
+import { useMemo, useState, useEffect } from 'react';
+import {
+    connectPrinter,
+    isPrinterConnected,
+    getConnectedPrinterName,
+    disconnectPrinter,
+    sendRawBytes,
+} from '../utils/bluetoothPrinter';
 
 // Format YYYY-MM-DD helper for inputs
 const toDateStr = (date: Date) => {
@@ -24,6 +31,36 @@ export default function SalesDashboard() {
     const [activeFilter, setActiveFilter] = useState('Today');
     const [startDate, setStartDate] = useState(getTodayStr());
     const [endDate, setEndDate] = useState(getTodayStr());
+
+    // Bluetooth printer state
+    const [printerName, setPrinterName] = useState('');
+    const [isConnecting, setIsConnecting] = useState(false);
+    const [isPrinting, setIsPrinting] = useState(false);
+    const [printerError, setPrinterError] = useState('');
+
+    useEffect(() => {
+        setPrinterName(getConnectedPrinterName());
+    }, []);
+
+    const connected = isPrinterConnected();
+
+    const handleConnect = async () => {
+        if (isPrinterConnected()) {
+            disconnectPrinter();
+            setPrinterName('');
+            return;
+        }
+        setIsConnecting(true);
+        setPrinterError('');
+        try {
+            const name = await connectPrinter();
+            setPrinterName(name);
+        } catch (err: unknown) {
+            setPrinterError(err instanceof Error ? err.message : 'Connection failed');
+        } finally {
+            setIsConnecting(false);
+        }
+    };
 
     // The rendered report state lock
     const [reportPeriod, setReportPeriod] = useState({
@@ -157,61 +194,91 @@ export default function SalesDashboard() {
         return `${d}-${m}-${y}`;
     };
 
-    const handlePrint = () => {
-        const printContainer = document.createElement('div');
-        printContainer.id = 'print-container';
+    const handlePrint = async () => {
+        if (!isPrinterConnected()) {
+            setPrinterError('Connect a printer first!');
+            return;
+        }
+        setIsPrinting(true);
+        setPrinterError('');
+        try {
+            // Build ESC/POS plain-text sales summary
+            const LINE_W = 32;
+            const dashes = () => '-'.repeat(LINE_W) + '\n';
+            const center = (str: string) => {
+                const pad = Math.max(0, Math.floor((LINE_W - str.length) / 2));
+                return ' '.repeat(pad) + str + '\n';
+            };
+            const lpad = (str: string, len: number) => {
+                str = String(str);
+                if (str.length > len) str = str.substring(0, len - 1) + '.';
+                return str.padEnd(len);
+            };
+            const rpad = (str: string, len: number) => {
+                str = String(str);
+                if (str.length > len) str = str.substring(0, len - 1) + '.';
+                return str.padStart(len);
+            };
 
-        let catHtml = '';
-        let hasCats = false;
-        categories.forEach(cat => {
-            const catSales = reportData.categorySalesMap[cat.id] || 0;
-            if (catSales > 0) {
-                hasCats = true;
-                const catNameText = i18n.language === 'ta' && cat.nameTa ? cat.nameTa : cat.name;
-                catHtml += `<div style="display: flex; justify-content: space-between; margin-bottom: 4px; padding: 2px 0; color: #000;"><span>${catNameText}</span><span>₹${catSales}</span></div>`;
+            const now = new Date().toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
+            const period = `${formatShortDate(reportPeriod.start)} to ${formatShortDate(reportPeriod.end)}`;
+
+            // Category rows
+            const catRows: string[] = [];
+            categories.forEach(cat => {
+                const sales = reportData.categorySalesMap[cat.id] || 0;
+                if (sales > 0) {
+                    const name = i18n.language === 'ta' && cat.nameTa ? cat.nameTa : cat.name;
+                    catRows.push(lpad(name, 22) + rpad(`Rs${sales}`, 10) + '\n');
+                }
+            });
+            const unkSales = reportData.categorySalesMap['unknown'] || 0;
+            if (unkSales > 0) {
+                catRows.push(lpad('Uncategorized', 22) + rpad(`Rs${unkSales}`, 10) + '\n');
             }
-        });
-        const unkSales = reportData.categorySalesMap['unknown'] || 0;
-        if (unkSales > 0) {
-            hasCats = true;
-            catHtml += `<div style="display: flex; justify-content: space-between; margin-bottom: 4px; padding: 2px 0; color: #000;"><span>Uncategorized</span><span>₹${unkSales}</span></div>`;
-        }
-        if (!hasCats) {
-            catHtml = '<div style="text-align: center; color: #000; padding: 4px 0;">No sales</div>';
-        }
+            if (catRows.length === 0) catRows.push(center('No sales'));
 
-        printContainer.innerHTML = `
-            <div style="font-family: 'Courier New', Courier, monospace; width: 100%; max-width: 58mm; padding: 10px; font-size: 11px; color: #000 !important; background: #fff !important; box-sizing: border-box;">
-                <div style="text-align: center; font-weight: bold; font-size: 13px; margin-bottom: 8px; color: #000;">SALES REPORT</div>
-                <div style="text-align: center; margin-bottom: 8px; color: #000;">${formatShortDate(reportPeriod.start)} to ${formatShortDate(reportPeriod.end)}</div>
-                <div style="border-top: 1px dashed #000; margin: 8px 0;"></div>
-                <div style="display: flex; justify-content: space-between; font-weight: bold; padding: 2px 0; color: #000;">
-                    <span>Orders:</span>
-                    <span>${reportData.totalOrders}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; font-weight: bold; padding: 2px 0; color: #000;">
-                    <span>Total Sales:</span>
-                    <span>₹${reportData.totalSales}</span>
-                </div>
-                <div style="border-top: 1px dashed #000; margin: 8px 0;"></div>
-                <div style="font-weight: bold; text-align: center; margin-bottom: 6px; color: #000;">CATEGORY SALES</div>
-                <div style="border-top: 1px dashed #000; margin: 8px 0;"></div>
-                ${catHtml}
-                <div style="border-top: 1px dashed #000; margin: 8px 0;"></div>
-                <div style="text-align: center; font-size: 10px; color: #000; padding: 4px 0;">
-                    Printed: ${new Date().toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
-                </div>
-            </div>
-        `;
-        document.body.appendChild(printContainer);
+            const receipt = [
+                center('SALES REPORT'),
+                '\n',
+                center(now),
+                center(period),
+                dashes(),
+                lpad('Orders:', 22) + rpad(String(reportData.totalOrders), 10) + '\n',
+                lpad('Total Sales:', 22) + rpad(`Rs${reportData.totalSales}`, 10) + '\n',
+                dashes(),
+                center('CATEGORY SALES'),
+                dashes(),
+                ...catRows,
+                dashes(),
+                '\n',
+                center('Made with 6ixmindslabs'),
+            ].join('');
 
-        setTimeout(() => {
-            window.print();
-            setTimeout(() => {
-                const containerToRemove = document.getElementById('print-container');
-                if (containerToRemove) document.body.removeChild(containerToRemove);
-            }, 1000);
-        }, 200);
+            // ESC/POS: init + text + feed + cut
+            const ESC = 0x1b, GS = 0x1d;
+            const encoder = new TextEncoder();
+            const textBytes = encoder.encode(receipt);
+            const header = new Uint8Array([ESC, 0x40]);
+            const feed = new Uint8Array([ESC, 0x64, 0x03]);
+            const cut = new Uint8Array([GS, 0x56, 0x42, 0x00]);
+
+            const data = new Uint8Array(
+                header.length + textBytes.length + feed.length + cut.length
+            );
+            let off = 0;
+            data.set(header, off); off += header.length;
+            data.set(textBytes, off); off += textBytes.length;
+            data.set(feed, off); off += feed.length;
+            data.set(cut, off);
+
+            // Send raw bytes directly to connected printer
+            await sendRawBytes(data);
+        } catch (err: unknown) {
+            setPrinterError(err instanceof Error ? err.message : 'Print failed');
+        } finally {
+            setIsPrinting(false);
+        }
     };
 
     return (
@@ -273,13 +340,32 @@ export default function SalesDashboard() {
                             </div>
                         </div>
 
-                        <div className="flex gap-3 md:gap-4 w-full lg:w-auto">
+                        <div className="flex flex-col gap-2 w-full lg:w-auto">
+                            {/* Bluetooth status */}
+                            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-semibold ${connected ? 'bg-green-50 border-green-200 text-green-700' : 'bg-slate-50 border-slate-200 text-slate-500'
+                                }`}>
+                                <button
+                                    onClick={handleConnect}
+                                    disabled={isConnecting}
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md font-bold text-xs transition-all ${connected
+                                        ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                        : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                                        } disabled:opacity-50`}
+                                >
+                                    {isConnecting ? <BluetoothSearching size={13} className="animate-pulse" /> : connected ? <Bluetooth size={13} /> : <BluetoothOff size={13} />}
+                                    {isConnecting ? 'Connecting...' : connected ? printerName : 'Connect Printer'}
+                                </button>
+                                {printerError && <span className="text-red-500 text-[10px] truncate max-w-[140px]">{printerError}</span>}
+                            </div>
+
+                            {/* Print button */}
                             <button
                                 onClick={handlePrint}
-                                className="flex-1 lg:flex-none px-5 md:px-6 py-3 md:py-4 bg-slate-800 text-white font-black text-base md:text-lg rounded-lg md:rounded-xl hover:bg-slate-900 transition-all flex items-center justify-center gap-2 md:gap-3 shadow-lg"
+                                disabled={!connected || isPrinting}
+                                className="flex-1 lg:flex-none px-5 md:px-6 py-3 md:py-4 bg-slate-800 text-white font-black text-base md:text-lg rounded-lg md:rounded-xl hover:bg-slate-900 transition-all flex items-center justify-center gap-2 md:gap-3 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <Printer size={20} className="md:w-6 md:h-6" />
-                                <span>{t('print_receipt')}</span>
+                                <span>{isPrinting ? 'Printing...' : t('print_receipt')}</span>
                             </button>
                         </div>
                     </div>
