@@ -193,56 +193,88 @@ body {
   -ms-overflow-style: none;
 }
 
-/* Printing logic for thermal printers (58mm) */
+/* Printing logic for thermal printers (58mm) — optimized for PrintHand */
 @media print {
   @page {
     size: 58mm auto;
-    margin: 0;
+    margin: 0mm;
   }
 
-  * {
+  *,
+  *::before,
+  *::after {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+    box-sizing: border-box !important;
   }
 
-  html,
-  body {
+  html {
+    width: 58mm !important;
     height: auto !important;
-    width: auto !important;
+    overflow: visible !important;
+    background: white !important;
+  }
+
+  body {
+    width: 58mm !important;
+    height: auto !important;
     overflow: visible !important;
     position: static !important;
     margin: 0 !important;
     padding: 0 !important;
     background: white !important;
+    color: black !important;
+    font-size: 12px !important;
   }
 
+  /* Hide everything except the receipt */
   body>*:not(#print-container) {
     display: none !important;
+    visibility: hidden !important;
   }
 
-  img:not(#print-container img),
-  svg:not(#print-container svg),
-  .no-print {
+  .no-print,
+  nav,
+  header,
+  footer,
+  aside {
     display: none !important;
   }
 
   #print-container {
     display: block !important;
-    position: relative !important;
-    left: 0 !important;
-    top: 0 !important;
+    visibility: visible !important;
+    position: static !important;
     width: 58mm !important;
-    min-height: 50mm !important;
+    max-width: 58mm !important;
+    min-height: auto !important;
     background: white !important;
     color: black !important;
     font-family: 'Courier New', Courier, monospace !important;
+    font-size: 12px !important;
     margin: 0 !important;
     padding: 0 !important;
+    overflow: visible !important;
     page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 
   #print-container * {
     visibility: visible !important;
     color: black !important;
+    background: white !important;
+    max-width: 58mm !important;
+  }
+
+  #print-container table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    table-layout: fixed !important;
+  }
+
+  #print-container td,
+  #print-container th {
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
   }
 }
