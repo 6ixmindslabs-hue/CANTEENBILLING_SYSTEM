@@ -41,55 +41,58 @@ export default function BillingScreen() {
             });
         }
 
-        // 2. Format HTML Data for Bluetooth Print App
+        // 2. Build receipt DOM (RawBT intercepts window.print() on Android)
+        const oldContainer = document.getElementById('print-container');
+        if (oldContainer) document.body.removeChild(oldContainer);
+
+        const printContainer = document.createElement('div');
+        printContainer.id = 'print-container';
+
         const cartRows = cart.map(item => {
             const displayName = i18n.language === 'ta' && item.nameTa ? item.nameTa : item.name;
             return `
             <tr>
-                <td style="width: 50%; padding: 4px 2px; color: #000;">${displayName}</td>
-                <td style="width: 15%; text-align: center; padding: 4px 2px; color: #000;">${item.quantity}</td>
-                <td style="width: 35%; text-align: right; padding: 4px 2px; color: #000;">Rs.${item.price * item.quantity}</td>
+                <td style="width:50%;padding:4px 2px;">${displayName}</td>
+                <td style="width:15%;text-align:center;padding:4px 2px;">${item.quantity}</td>
+                <td style="width:35%;text-align:right;padding:4px 2px;">Rs.${item.price * item.quantity}</td>
             </tr>`;
         }).join('');
 
-        const htmlContent = `
-            <div style="font-family: 'Courier New', Courier, monospace; width: 100%; max-width: 58mm; padding: 5px; font-size: 13px; color: #000; background: #fff; box-sizing: border-box;">
-                <div style="text-align: center; font-weight: bold; font-size: 15px; margin-bottom: 8px;">${t('college_canteen')}</div>
-                <div style="text-align: center; font-size: 11px; margin-bottom: 8px;">${new Date().toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</div>
-                <div style="border-top: 1px dashed #000; margin: 8px 0;"></div>
-                <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+        printContainer.innerHTML = `
+            <div style="font-family:'Courier New',Courier,monospace;width:58mm;padding:4mm 2mm;font-size:12px;color:#000;background:#fff;box-sizing:border-box;">
+                <div style="text-align:center;font-weight:bold;font-size:14px;margin-bottom:6px;">${t('college_canteen')}</div>
+                <div style="text-align:center;font-size:10px;margin-bottom:6px;">${new Date().toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</div>
+                <div style="border-top:1px dashed #000;margin:6px 0;"></div>
+                <table style="width:100%;border-collapse:collapse;font-size:11px;">
                     <thead>
                         <tr>
-                            <th style="text-align: left; border-bottom: 1px dashed #000; padding: 4px 0;">Item</th>
-                            <th style="text-align: center; border-bottom: 1px dashed #000; padding: 4px 0;">Qty</th>
-                            <th style="text-align: right; border-bottom: 1px dashed #000; padding: 4px 0;">Price</th>
+                            <th style="text-align:left;border-bottom:1px dashed #000;padding:3px 0;">Item</th>
+                            <th style="text-align:center;border-bottom:1px dashed #000;padding:3px 0;">Qty</th>
+                            <th style="text-align:right;border-bottom:1px dashed #000;padding:3px 0;">Price</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        ${cartRows}
-                    </tbody>
+                    <tbody>${cartRows}</tbody>
                 </table>
-                <div style="border-top: 1px dashed #000; margin: 8px 0;"></div>
-                <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; padding: 4px 0;">
-                    <span>TOTAL:</span>
-                    <span>Rs.${orderTotal}</span>
+                <div style="border-top:1px dashed #000;margin:6px 0;"></div>
+                <div style="display:flex;justify-content:space-between;font-weight:bold;font-size:13px;padding:3px 0;">
+                    <span>TOTAL:</span><span>Rs.${orderTotal}</span>
                 </div>
-                <div style="border-top: 1px dashed #000; margin: 8px 0;"></div>
-                <div style="text-align: center; margin-top: 10px; font-weight: bold;">Thank you!</div>
-                <div style="border-top: 1px dashed #000; margin: 8px 0;"></div>
-                <div style="text-align: center; font-size: 11px; font-weight: bold; padding: 4px 0;">Made with 6ixmindslabs</div>
+                <div style="border-top:1px dashed #000;margin:6px 0;"></div>
+                <div style="text-align:center;font-weight:bold;margin-top:6px;">Thank you!</div>
+                <div style="border-top:1px dashed #000;margin:6px 0;"></div>
+                <div style="text-align:center;font-size:10px;font-weight:bold;padding:3px 0;">Made with 6ixmindslabs</div>
             </div>
         `;
+        document.body.appendChild(printContainer);
 
-        const getHTMLEquivalent = (s: string) => s.replaceAll("<", "&lt;").replaceAll(">", "&gt;");
-        const printData = "<HTML>" + getHTMLEquivalent(htmlContent);
-
-        // 3. Trigger Android Intent for Bluetooth Print App
-        // S.android.intent.extra.TEXT carries the data
-        const intentUri = `intent://send#Intent;action=android.intent.action.SEND;type=text/plain;package=mate.bluetoothprint;S.android.intent.extra.TEXT=${encodeURIComponent(printData)};S.browser_fallback_url=${encodeURIComponent('https://play.google.com/store/apps/details?id=mate.bluetoothprint')};end`;
-
-        // Redirect to intent URI
-        window.location.href = intentUri;
+        // 3. Trigger print — RawBT intercepts this on Android Chrome
+        setTimeout(() => {
+            window.print();
+            setTimeout(() => {
+                const el = document.getElementById('print-container');
+                if (el) document.body.removeChild(el);
+            }, 10000);
+        }, 300);
 
         // 4. Clear Bill
         clearCart();
