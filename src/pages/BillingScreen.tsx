@@ -41,35 +41,28 @@ export default function BillingScreen() {
             });
         }
 
-        // 2. Print via Browser Print API formatted for 58mm
-        const oldContainer = document.getElementById('print-container');
-        if (oldContainer) document.body.removeChild(oldContainer);
-
-        const printContainer = document.createElement('div');
-        printContainer.id = 'print-container';
-
-        // Ensure no images can be injected (pure text mapping)
+        // 2. Format HTML Data for Bluetooth Print App
         const cartRows = cart.map(item => {
             const displayName = i18n.language === 'ta' && item.nameTa ? item.nameTa : item.name;
             return `
             <tr>
                 <td style="width: 50%; padding: 4px 2px; color: #000;">${displayName}</td>
                 <td style="width: 15%; text-align: center; padding: 4px 2px; color: #000;">${item.quantity}</td>
-                <td style="width: 35%; text-align: right; padding: 4px 2px; color: #000;">₹${item.price * item.quantity}</td>
+                <td style="width: 35%; text-align: right; padding: 4px 2px; color: #000;">Rs.${item.price * item.quantity}</td>
             </tr>`;
         }).join('');
 
-        printContainer.innerHTML = `
-            <div style="font-family: 'Courier New', Courier, monospace; width: 100%; max-width: 58mm; padding: 10px; font-size: 13px; color: #000 !important; background: #fff !important; box-sizing: border-box;">
-                <div style="text-align: center; font-weight: bold; font-size: 15px; margin-bottom: 8px; color: #000;">${t('college_canteen')}</div>
-                <div style="text-align: center; font-size: 11px; margin-bottom: 8px; color: #000;">${new Date().toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</div>
+        const htmlContent = `
+            <div style="font-family: 'Courier New', Courier, monospace; width: 100%; max-width: 58mm; padding: 5px; font-size: 13px; color: #000; background: #fff; box-sizing: border-box;">
+                <div style="text-align: center; font-weight: bold; font-size: 15px; margin-bottom: 8px;">${t('college_canteen')}</div>
+                <div style="text-align: center; font-size: 11px; margin-bottom: 8px;">${new Date().toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</div>
                 <div style="border-top: 1px dashed #000; margin: 8px 0;"></div>
-                <table style="width: 100%; border-collapse: collapse; font-size: 12px; color: #000;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
                     <thead>
                         <tr>
-                            <th style="text-align: left; border-bottom: 1px dashed #000; padding: 4px 0; color: #000;">Item</th>
-                            <th style="text-align: center; border-bottom: 1px dashed #000; padding: 4px 0; color: #000;">Qty</th>
-                            <th style="text-align: right; border-bottom: 1px dashed #000; padding: 4px 0; color: #000;">Price</th>
+                            <th style="text-align: left; border-bottom: 1px dashed #000; padding: 4px 0;">Item</th>
+                            <th style="text-align: center; border-bottom: 1px dashed #000; padding: 4px 0;">Qty</th>
+                            <th style="text-align: right; border-bottom: 1px dashed #000; padding: 4px 0;">Price</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -77,29 +70,28 @@ export default function BillingScreen() {
                     </tbody>
                 </table>
                 <div style="border-top: 1px dashed #000; margin: 8px 0;"></div>
-                <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; padding: 4px 0; color: #000;">
+                <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; padding: 4px 0;">
                     <span>TOTAL:</span>
                     <span>Rs.${orderTotal}</span>
                 </div>
                 <div style="border-top: 1px dashed #000; margin: 8px 0;"></div>
-                <div style="text-align: center; margin-top: 10px; font-weight: bold; color: #000;">Thank you!</div>
+                <div style="text-align: center; margin-top: 10px; font-weight: bold;">Thank you!</div>
                 <div style="border-top: 1px dashed #000; margin: 8px 0;"></div>
-                <div style="text-align: center; font-size: 11px; font-weight: bold; color: #000; padding: 4px 0;">Made with 6ixmindslabs</div>
+                <div style="text-align: center; font-size: 11px; font-weight: bold; padding: 4px 0;">Made with 6ixmindslabs</div>
             </div>
         `;
-        document.body.appendChild(printContainer);
 
-        setTimeout(() => {
-            window.print();
-            // Increased timeout to 10s so Android print spooler (like RawBT) 
-            // has enough time to read the DOM before it's destroyed.
-            setTimeout(() => {
-                const containerToRemove = document.getElementById('print-container');
-                if (containerToRemove) document.body.removeChild(containerToRemove);
-            }, 10000);
-        }, 500);
+        const getHTMLEquivalent = (s: string) => s.replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+        const printData = "<HTML>" + getHTMLEquivalent(htmlContent);
 
-        // 3. Clear Bill
+        // 3. Trigger Android Intent for Bluetooth Print App
+        // S.android.intent.extra.TEXT carries the data
+        const intentUri = `intent://send#Intent;action=android.intent.action.SEND;type=text/plain;package=mate.bluetoothprint;S.android.intent.extra.TEXT=${encodeURIComponent(printData)};S.browser_fallback_url=${encodeURIComponent('https://play.google.com/store/apps/details?id=mate.bluetoothprint')};end`;
+
+        // Redirect to intent URI
+        window.location.href = intentUri;
+
+        // 4. Clear Bill
         clearCart();
     };
 
