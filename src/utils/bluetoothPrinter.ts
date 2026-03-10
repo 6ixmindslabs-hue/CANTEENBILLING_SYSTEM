@@ -119,21 +119,40 @@ function bytes(...parts: (number[] | Uint8Array | string)[]): Uint8Array {
     return out;
 }
 
-/** Pad or truncate string to exactly `len` chars */
-function pad(str: string, len: number, right = false): string {
+// Receipt line width for 58mm printer in normal font mode = 32 chars
+const LINE_W = 32;
+
+// Column widths: NAME(16) + space(1) + QTY(4) + space(1) + PRICE(10)
+const COL_NAME = 16;
+const COL_QTY = 4;
+const COL_PRICE = 10;
+
+/** Pad / truncate to exact length, right-align if flag set */
+function col(str: string, len: number, right = false): string {
+    str = String(str);
     if (str.length > len) str = str.substring(0, len - 1) + '.';
     return right ? str.padStart(len) : str.padEnd(len);
 }
 
-/** Print row: name (left) | qty (center) | price (right) — 32 chars wide */
-function itemRow(name: string, qty: number, price: number): string {
-    const priceStr = `Rs.${price}`;
+/** One item row — fixed column alignment */
+function itemRow(name: string, qty: number, lineTotal: number): string {
     const qtyStr = `x${qty}`;
-    const nameWidth = 32 - qtyStr.length - priceStr.length - 2;
-    return pad(name, nameWidth) + ' ' + qtyStr + ' ' + pad(priceStr, priceStr.length, true) + '\n';
+    const priceStr = `Rs.${lineTotal}`;
+    return (
+        col(name, COL_NAME) +
+        ' ' +
+        col(qtyStr, COL_QTY, true) +
+        ' ' +
+        col(priceStr, COL_PRICE, true) +
+        '\n'
+    );
 }
 
-function dashes(n = 32): string {
+function dashes(n = LINE_W): string {
+    return '='.repeat(n) + '\n';
+}
+
+function thinDashes(n = LINE_W): string {
     return '-'.repeat(n) + '\n';
 }
 
@@ -148,46 +167,62 @@ export interface ReceiptData {
 export function buildReceipt(data: ReceiptData): Uint8Array {
     const now = new Date().toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
 
+    // Column header row — same widths as item rows
+    const headerRow =
+        col('ITEM', COL_NAME) +
+        ' ' +
+        col('QTY', COL_QTY, true) +
+        ' ' +
+        col('AMOUNT', COL_PRICE, true) +
+        '\n';
+
+    const totalStr = `Rs.${data.total}`;
+
     return bytes(
         CMD.init,
 
-        // Shop Name — centered, bold, big
+        // ── Shop Name: double-height only (shorter than double-both) ──
         CMD.alignCenter,
         CMD.boldOn,
-        CMD.dblBoth,
+        CMD.dblHeight,
         data.shopName + '\n',
         CMD.normalSize,
         CMD.boldOff,
 
-        // Date/Time
+        // Date / Time
         now + '\n',
+        '\n',
+
         dashes(),
 
-        // Header row
+        // Column headers
         CMD.alignLeft,
         CMD.boldOn,
-        pad('ITEM', 18) + ' QTY    AMT\n',
+        headerRow,
         CMD.boldOff,
-        dashes(),
 
-        // Cart items
+        thinDashes(),
+
+        // ── Item rows ──
         ...data.items.map(i => itemRow(i.name, i.quantity, i.price * i.quantity)),
 
         dashes(),
 
-        // Total
+        // ── Total ──
         CMD.boldOn,
-        pad('TOTAL:', 18) + pad(`Rs.${data.total}`, 14, true) + '\n',
+        col('TOTAL:', COL_NAME + 1 + COL_QTY) +
+        ' ' +
+        col(totalStr, COL_PRICE, true) + '\n',
         CMD.boldOff,
 
         dashes(),
+        '\n',
 
-        // Footer
+        // ── Footer ──
         CMD.alignCenter,
         CMD.boldOn,
         'Thank you!\n',
         CMD.boldOff,
-        CMD.normalSize,
         'Made with 6ixmindslabs\n',
 
         // Feed and cut
