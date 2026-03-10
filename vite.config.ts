@@ -12,7 +12,10 @@ export default defineConfig({
       injectRegister: 'auto',
       includeAssets: ['college-icon.png'],
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,json}']
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
+        // Force new service worker to activate immediately
+        skipWaiting: true,
+        clientsClaim: true,
       },
       manifest: {
         name: 'Offline Canteen POS',
