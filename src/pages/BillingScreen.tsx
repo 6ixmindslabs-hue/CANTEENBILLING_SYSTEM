@@ -1,12 +1,32 @@
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useStore } from '../store/useStore';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/db';
-import { Printer, Trash2, Plus, Minus } from 'lucide-react';
+import { Printer, Trash2, Plus, Minus, Bluetooth, BluetoothOff, BluetoothSearching } from 'lucide-react';
+import {
+    connectPrinter,
+    printReceipt,
+    isPrinterConnected,
+    getConnectedPrinterName,
+    disconnectPrinter,
+} from '../utils/bluetoothPrinter';
 
 export default function BillingScreen() {
     const { t, i18n } = useTranslation();
     const { cart, addToCart, increaseQuantity, decreaseQuantity, removeFromCart, clearCart, total, selectedCategory, setSelectedCategory } = useStore();
+
+    const [printerName, setPrinterName] = useState<string>('');
+    const [isConnecting, setIsConnecting] = useState(false);
+    const [isPrinting, setIsPrinting] = useState(false);
+    const [printerError, setPrinterError] = useState<string>('');
+
+    // Sync state with module-level cached connection
+    useEffect(() => {
+        setPrinterName(getConnectedPrinterName());
+    }, []);
+
+    const connected = isPrinterConnected();
 
     const categories = useLiveQuery(() => db.categories.toArray()) || [];
     const items = useLiveQuery(() => {
@@ -16,6 +36,27 @@ export default function BillingScreen() {
         return db.items.toArray();
     }, [selectedCategory]) || [];
 
+    // ── Connect / Disconnect ─────────────────────────────────────────
+    const handleConnect = async () => {
+        if (isPrinterConnected()) {
+            disconnectPrinter();
+            setPrinterName('');
+            return;
+        }
+        setIsConnecting(true);
+        setPrinterError('');
+        try {
+            const name = await connectPrinter();
+            setPrinterName(name);
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : 'Connection failed';
+            setPrinterError(msg);
+        } finally {
+            setIsConnecting(false);
+        }
+    };
+
+    // ── Print ───────────────────────────────────────────────────────
     const handlePrint = async () => {
         if (cart.length === 0) return;
 
@@ -23,12 +64,7 @@ export default function BillingScreen() {
         const orderId = crypto.randomUUID();
         const orderTotal = total();
 
-        await db.orders.add({
-            id: orderId,
-            date: Date.now(),
-            totalAmount: orderTotal
-        });
-
+        await db.orders.add({ id: orderId, date: Date.now(), totalAmount: orderTotal });
         for (const item of cart) {
             await db.orderItems.add({
                 id: crypto.randomUUID(),
@@ -37,65 +73,35 @@ export default function BillingScreen() {
                 name: item.name,
                 nameTa: item.nameTa,
                 quantity: item.quantity,
-                price: item.price
+                price: item.price,
             });
         }
 
-        // 2. Build receipt DOM (RawBT intercepts window.print() on Android)
-        const oldContainer = document.getElementById('print-container');
-        if (oldContainer) document.body.removeChild(oldContainer);
+        // 2. Print via Web Bluetooth
+        if (!isPrinterConnected()) {
+            setPrinterError('Connect a printer first!');
+            return;
+        }
 
-        const printContainer = document.createElement('div');
-        printContainer.id = 'print-container';
-
-        const cartRows = cart.map(item => {
-            const displayName = i18n.language === 'ta' && item.nameTa ? item.nameTa : item.name;
-            return `
-            <tr>
-                <td style="width:50%;padding:4px 2px;">${displayName}</td>
-                <td style="width:15%;text-align:center;padding:4px 2px;">${item.quantity}</td>
-                <td style="width:35%;text-align:right;padding:4px 2px;">Rs.${item.price * item.quantity}</td>
-            </tr>`;
-        }).join('');
-
-        printContainer.innerHTML = `
-            <div style="font-family:'Courier New',Courier,monospace;width:58mm;padding:4mm 2mm;font-size:12px;color:#000;background:#fff;box-sizing:border-box;">
-                <div style="text-align:center;font-weight:bold;font-size:14px;margin-bottom:6px;">${t('college_canteen')}</div>
-                <div style="text-align:center;font-size:10px;margin-bottom:6px;">${new Date().toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</div>
-                <div style="border-top:1px dashed #000;margin:6px 0;"></div>
-                <table style="width:100%;border-collapse:collapse;font-size:11px;">
-                    <thead>
-                        <tr>
-                            <th style="text-align:left;border-bottom:1px dashed #000;padding:3px 0;">Item</th>
-                            <th style="text-align:center;border-bottom:1px dashed #000;padding:3px 0;">Qty</th>
-                            <th style="text-align:right;border-bottom:1px dashed #000;padding:3px 0;">Price</th>
-                        </tr>
-                    </thead>
-                    <tbody>${cartRows}</tbody>
-                </table>
-                <div style="border-top:1px dashed #000;margin:6px 0;"></div>
-                <div style="display:flex;justify-content:space-between;font-weight:bold;font-size:13px;padding:3px 0;">
-                    <span>TOTAL:</span><span>Rs.${orderTotal}</span>
-                </div>
-                <div style="border-top:1px dashed #000;margin:6px 0;"></div>
-                <div style="text-align:center;font-weight:bold;margin-top:6px;">Thank you!</div>
-                <div style="border-top:1px dashed #000;margin:6px 0;"></div>
-                <div style="text-align:center;font-size:10px;font-weight:bold;padding:3px 0;">Made with 6ixmindslabs</div>
-            </div>
-        `;
-        document.body.appendChild(printContainer);
-
-        // 3. Trigger print — RawBT intercepts this on Android Chrome
-        setTimeout(() => {
-            window.print();
-            setTimeout(() => {
-                const el = document.getElementById('print-container');
-                if (el) document.body.removeChild(el);
-            }, 10000);
-        }, 300);
-
-        // 4. Clear Bill
-        clearCart();
+        setIsPrinting(true);
+        setPrinterError('');
+        try {
+            await printReceipt({
+                shopName: t('college_canteen'),
+                items: cart.map(item => ({
+                    name: i18n.language === 'ta' && item.nameTa ? item.nameTa : item.name,
+                    quantity: item.quantity,
+                    price: item.price,
+                })),
+                total: orderTotal,
+            });
+            clearCart();
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : 'Print failed';
+            setPrinterError(msg);
+        } finally {
+            setIsPrinting(false);
+        }
     };
 
     return (
@@ -170,6 +176,31 @@ export default function BillingScreen() {
                     <p className="text-slate-400 text-[9px] md:text-[10px] mt-0.5">{t('live_order_summary')}</p>
                 </div>
 
+                {/* Bluetooth Printer Bar */}
+                <div className={`flex items-center gap-2 px-3 py-2 border-b text-xs font-semibold ${connected ? 'bg-green-50 border-green-200' : 'bg-slate-50 border-slate-200'}`}>
+                    <button
+                        onClick={handleConnect}
+                        disabled={isConnecting}
+                        title={connected ? 'Disconnect printer' : 'Connect Bluetooth printer'}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-xs transition-all active:scale-95 ${connected
+                                ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                            } disabled:opacity-50`}
+                    >
+                        {isConnecting ? (
+                            <BluetoothSearching size={14} className="animate-pulse" />
+                        ) : connected ? (
+                            <Bluetooth size={14} />
+                        ) : (
+                            <BluetoothOff size={14} />
+                        )}
+                        {isConnecting ? 'Connecting...' : connected ? printerName : 'Connect Printer'}
+                    </button>
+                    {printerError && (
+                        <span className="text-red-500 text-[10px] leading-tight truncate">{printerError}</span>
+                    )}
+                </div>
+
                 {/* Cart Items */}
                 <div className="flex-1 overflow-y-auto p-2 md:p-4 space-y-2 md:space-y-3 bg-slate-50">
                     {cart.length === 0 ? (
@@ -234,13 +265,20 @@ export default function BillingScreen() {
 
                         <button
                             onClick={handlePrint}
-                            disabled={cart.length === 0}
+                            disabled={cart.length === 0 || !connected || isPrinting}
                             className="flex-1 flex items-center justify-center space-x-1.5 md:space-x-2 bg-green-500 text-white font-black text-base md:text-lg py-2.5 md:py-3 rounded-lg md:rounded-xl hover:bg-green-600 transition-all shadow-lg shadow-green-500/30 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
                         >
                             <Printer size={20} className="md:w-[22px] md:h-[22px]" />
-                            <span>{t('print_bill')}</span>
+                            <span>{isPrinting ? 'Printing...' : t('print_bill')}</span>
                         </button>
                     </div>
+
+                    {/* No printer warning */}
+                    {!connected && cart.length > 0 && (
+                        <p className="text-center text-[10px] text-amber-600 font-semibold mt-1.5">
+                            ⚠️ Connect a Bluetooth printer to print
+                        </p>
+                    )}
                 </div>
             </div>
         </div>
