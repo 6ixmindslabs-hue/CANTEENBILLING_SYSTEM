@@ -2,9 +2,14 @@
  * Web Bluetooth ESC/POS Thermal Printer Utility
  * Supports 58mm thermal printers (common Chinese BLE printers)
  * Works on Chrome/Edge for Android
+ *
+ * Receipt format: plain text only — no bold/size commands for maximum compatibility.
+ * 32 characters per line in normal font mode.
  */
 
-// Common BLE GATT service/characteristic UUIDs for 58mm thermal printers
+// ─────────────── BLE Printer Profiles ───────────────
+// Common GATT service/characteristic UUIDs for 58mm thermal printers
+
 const PRINTER_PROFILES = [
     {
         service: '000018f0-0000-1000-8000-00805f9b34fb',
@@ -24,7 +29,8 @@ const PRINTER_PROFILES = [
     },
 ];
 
-// Module-level cache: holds the active connection across renders
+// ─────────────── Connection State ───────────────
+
 let cachedCharacteristic: BluetoothRemoteGATTCharacteristic | null = null;
 let cachedDeviceName: string = '';
 
@@ -42,12 +48,12 @@ export function disconnectPrinter() {
 }
 
 /**
- * Prompts the user to select a Bluetooth printer and connects to it.
+ * Opens the browser Bluetooth picker, connects to printer, caches the characteristic.
  * Returns the device name on success.
  */
 export async function connectPrinter(): Promise<string> {
     if (!navigator.bluetooth) {
-        throw new Error('Web Bluetooth is not supported on this browser. Please use Chrome on Android.');
+        throw new Error('Web Bluetooth is not supported. Please use Chrome on Android.');
     }
 
     const device = await navigator.bluetooth.requestDevice({
@@ -59,7 +65,6 @@ export async function connectPrinter(): Promise<string> {
 
     const server = await device.gatt.connect();
 
-    // Try each known profile until one works
     for (const profile of PRINTER_PROFILES) {
         try {
             const service = await server.getPrimaryService(profile.service);
@@ -67,42 +72,33 @@ export async function connectPrinter(): Promise<string> {
             cachedCharacteristic = characteristic;
             cachedDeviceName = device.name || 'Printer';
 
-            // Listen for disconnect
             device.addEventListener('gattserverdisconnected', () => {
                 cachedCharacteristic = null;
                 cachedDeviceName = '';
-                console.log('Printer disconnected.');
             });
 
             return cachedDeviceName;
         } catch {
-            // Try next profile
             continue;
         }
     }
 
-    throw new Error('Could not find a compatible print service. Make sure your printer is on and paired.');
+    throw new Error('No compatible print service found. Make sure your printer is on.');
 }
 
-// ─────────────── ESC/POS Command Helpers ───────────────
+// ─────────────── ESC/POS Commands (minimal) ───────────────
+// Plain text only — no bold, no font-size commands.
 
 const ESC = 0x1b;
-const GS = 0x1d;
+const GS  = 0x1d;
 
 const CMD = {
-    init: [ESC, 0x40],
-    alignLeft: [ESC, 0x61, 0x00],
-    alignCenter: [ESC, 0x61, 0x01],
-    alignRight: [ESC, 0x61, 0x02],
-    boldOn: [ESC, 0x45, 0x01],
-    boldOff: [ESC, 0x45, 0x00],
-    dblHeight: [GS, 0x21, 0x01],
-    dblBoth: [GS, 0x21, 0x11],
-    normalSize: [GS, 0x21, 0x00],
-    feedLine: [0x0a],
-    feed3: [ESC, 0x64, 0x03],
-    cutPaper: [GS, 0x56, 0x42, 0x00],
+    init:     [ESC, 0x40],              // Initialize printer
+    feed3:    [ESC, 0x64, 0x03],        // Paper feed 3 lines
+    cutPaper: [GS,  0x56, 0x42, 0x00], // Full cut
 };
+
+// ─────────────── Byte Builder ───────────────
 
 const encoder = new TextEncoder();
 
@@ -119,41 +115,48 @@ function bytes(...parts: (number[] | Uint8Array | string)[]): Uint8Array {
     return out;
 }
 
-// Receipt line width for 58mm printer in normal font mode = 32 chars
-const LINE_W = 32;
+// ─────────────── Plain-Text Layout Helpers ───────────────
+// 58mm printer in normal font = 32 chars per line
+// Columns: ITEM(15) + QTY(7) + AMOUNT(10) = 32
 
-// Column widths: NAME(16) + space(1) + QTY(4) + space(1) + PRICE(10)
-const COL_NAME = 16;
-const COL_QTY = 4;
-const COL_PRICE = 10;
+const LINE_W   = 32;
+const COL_NAME = 15;
+const COL_QTY  = 7;
+const COL_AMT  = 10;
 
-/** Pad / truncate to exact length, right-align if flag set */
-function col(str: string, len: number, right = false): string {
+/** Center a string within LINE_W using spaces */
+function center(str: string): string {
+    const pad = Math.max(0, Math.floor((LINE_W - str.length) / 2));
+    return ' '.repeat(pad) + str + '\n';
+}
+
+/** Left-align, truncate if too long */
+function lpad(str: string, len: number): string {
     str = String(str);
     if (str.length > len) str = str.substring(0, len - 1) + '.';
-    return right ? str.padStart(len) : str.padEnd(len);
+    return str.padEnd(len);
 }
 
-/** One item row — fixed column alignment */
+/** Right-align, truncate if too long */
+function rpad(str: string, len: number): string {
+    str = String(str);
+    if (str.length > len) str = str.substring(0, len - 1) + '.';
+    return str.padStart(len);
+}
+
+/** 32-dash separator */
+function dashes(): string {
+    return '-'.repeat(LINE_W) + '\n';
+}
+
+/** Fixed-column item row: ITEM(15) | QTY(7) | AMOUNT(10) */
 function itemRow(name: string, qty: number, lineTotal: number): string {
-    const qtyStr = `x${qty}`;
-    const priceStr = `Rs.${lineTotal}`;
     return (
-        col(name, COL_NAME) +
-        ' ' +
-        col(qtyStr, COL_QTY, true) +
-        ' ' +
-        col(priceStr, COL_PRICE, true) +
+        lpad(name, COL_NAME) +
+        rpad(`x${qty}`, COL_QTY) +
+        rpad(`Rs${lineTotal}`, COL_AMT) +
         '\n'
     );
-}
-
-function dashes(n = LINE_W): string {
-    return '='.repeat(n) + '\n';
-}
-
-function thinDashes(n = LINE_W): string {
-    return '-'.repeat(n) + '\n';
 }
 
 // ─────────────── Receipt Builder ───────────────
@@ -167,91 +170,69 @@ export interface ReceiptData {
 export function buildReceipt(data: ReceiptData): Uint8Array {
     const now = new Date().toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
 
-    // Column header row — same widths as item rows
+    // Column header - same widths as itemRow
     const headerRow =
-        col('ITEM', COL_NAME) +
-        ' ' +
-        col('QTY', COL_QTY, true) +
-        ' ' +
-        col('AMOUNT', COL_PRICE, true) +
+        lpad('ITEM', COL_NAME) +
+        rpad('QTY', COL_QTY) +
+        rpad('AMOUNT', COL_AMT) +
         '\n';
 
-    const totalStr = `Rs.${data.total}`;
+    // Total row - QTY column left blank, AMOUNT right-aligned
+    const totalRow =
+        lpad('TOTAL', COL_NAME) +
+        ' '.repeat(COL_QTY) +
+        rpad(`Rs${data.total}`, COL_AMT) +
+        '\n';
 
-    return bytes(
-        CMD.init,
-
-        // ── Shop Name: double-height only (shorter than double-both) ──
-        CMD.alignCenter,
-        CMD.boldOn,
-        CMD.dblHeight,
-        data.shopName + '\n',
-        CMD.normalSize,
-        CMD.boldOff,
-
-        // Date / Time
-        now + '\n',
-        '\n',
-
+    const receipt = [
+        //  ── Header ──────────────────────────────────
+        center(data.shopName),   // "    CANTEEN INVOICE    "
+        '\n',                    // empty line gap
+        center(now),             // "   03/10/26 11:15 AM   "
         dashes(),
 
-        // Column headers
-        CMD.alignLeft,
-        CMD.boldOn,
-        headerRow,
-        CMD.boldOff,
-
-        thinDashes(),
-
-        // ── Item rows ──
-        ...data.items.map(i => itemRow(i.name, i.quantity, i.price * i.quantity)),
-
+        //  ── Table ───────────────────────────────────
+        headerRow,               // "ITEM             QTY    AMOUNT"
+        dashes(),
+        ...data.items.map(i =>
+            itemRow(i.name, i.quantity, i.price * i.quantity)
+        ),
         dashes(),
 
-        // ── Total ──
-        CMD.boldOn,
-        col('TOTAL:', COL_NAME + 1 + COL_QTY) +
-        ' ' +
-        col(totalStr, COL_PRICE, true) + '\n',
-        CMD.boldOff,
-
+        //  ── Total ───────────────────────────────────
+        totalRow,                // "TOTAL                     Rs85"
         dashes(),
         '\n',
 
-        // ── Footer ──
-        CMD.alignCenter,
-        CMD.boldOn,
-        'Thank you!\n',
-        CMD.boldOff,
-        'Made with 6ixmindslabs\n',
+        //  ── Footer ──────────────────────────────────
+        center('Thank you!'),
+        center('Made with 6ixmindslabs'),
+    ].join('');
 
-        // Feed and cut
-        CMD.feed3,
-        CMD.cutPaper,
-    );
+    return bytes(CMD.init, receipt, CMD.feed3, CMD.cutPaper);
 }
 
 // ─────────────── Send to Printer ───────────────
 
-const CHUNK_SIZE = 100; // BLE MTU safe size
+const CHUNK_SIZE = 100; // Safe BLE MTU chunk size
 
-async function sendChunked(characteristic: BluetoothRemoteGATTCharacteristic, data: Uint8Array) {
+async function sendChunked(
+    characteristic: BluetoothRemoteGATTCharacteristic,
+    data: Uint8Array
+) {
     for (let i = 0; i < data.length; i += CHUNK_SIZE) {
-        const chunk = data.slice(i, i + CHUNK_SIZE);
-        await characteristic.writeValue(chunk);
-        // Small delay to let the printer buffer process
+        await characteristic.writeValue(data.slice(i, i + CHUNK_SIZE));
         await new Promise(r => setTimeout(r, 30));
     }
 }
 
 /**
- * Prints the receipt to the connected BLE printer.
+ * Prints a receipt to the connected BLE printer.
  * Throws if no printer is connected.
  */
 export async function printReceipt(data: ReceiptData): Promise<void> {
     if (!cachedCharacteristic) {
-        throw new Error('No printer connected. Please connect a printer first.');
+        throw new Error('No printer connected. Tap "Connect Printer" first.');
     }
-    const receiptBytes = buildReceipt(data);
-    await sendChunked(cachedCharacteristic, receiptBytes);
+    await sendChunked(cachedCharacteristic, buildReceipt(data));
 }
