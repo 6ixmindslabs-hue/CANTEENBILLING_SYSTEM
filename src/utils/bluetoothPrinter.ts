@@ -165,21 +165,34 @@ export interface ReceiptData {
     shopName: string;
     items: { name: string; quantity: number; price: number }[];
     total: number;
+    headers?: {
+        item: string;
+        qty: string;
+        amount: string;
+        total: string;
+        thanks: string;
+    };
 }
 
 export function buildReceipt(data: ReceiptData): Uint8Array {
     const now = new Date().toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
 
+    const lblItem = data.headers?.item || 'ITEM';
+    const lblQty = data.headers?.qty || 'QTY';
+    const lblAmt = data.headers?.amount || 'AMOUNT';
+    const lblTotal = data.headers?.total || 'TOTAL';
+    const lblThanks = data.headers?.thanks || 'Thank you!';
+
     // Column header - same widths as itemRow
     const headerRow =
-        lpad('ITEM', COL_NAME) +
-        rpad('QTY', COL_QTY) +
-        rpad('AMOUNT', COL_AMT) +
+        lpad(lblItem, COL_NAME) +
+        rpad(lblQty, COL_QTY) +
+        rpad(lblAmt, COL_AMT) +
         '\n';
 
     // Total row - QTY column left blank, AMOUNT right-aligned
     const totalRow =
-        lpad('TOTAL', COL_NAME) +
+        lpad(lblTotal, COL_NAME) +
         ' '.repeat(COL_QTY) +
         rpad(`Rs${data.total}`, COL_AMT) +
         '\n';
@@ -205,7 +218,7 @@ export function buildReceipt(data: ReceiptData): Uint8Array {
         '\n',
 
         //  ── Footer ──────────────────────────────────
-        center('Thank you!'),
+        center(lblThanks),
         center('Made with 6ixmindslabs'),
     ].join('');
 

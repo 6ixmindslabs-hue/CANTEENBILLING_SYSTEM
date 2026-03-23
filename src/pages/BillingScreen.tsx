@@ -87,15 +87,20 @@ export default function BillingScreen() {
         setPrinterError('');
         try {
             await printReceipt({
-                // Force English for BLE ESC/POS printer support
-                shopName: i18n.t('college_canteen', { lng: 'en' }),
+                shopName: t('college_canteen'),
                 items: cart.map(item => ({
-                    // Force English item name for printer
-                    name: item.name,
+                    name: i18n.language === 'ta' && item.nameTa ? item.nameTa : item.name,
                     quantity: item.quantity,
                     price: item.price,
                 })),
                 total: orderTotal,
+                headers: {
+                    item: t('item'),
+                    qty: t('qty'),
+                    amount: t('amount'),
+                    total: t('total'),
+                    thanks: t('thank_you')
+                }
             });
             clearCart();
         } catch (err: unknown) {
