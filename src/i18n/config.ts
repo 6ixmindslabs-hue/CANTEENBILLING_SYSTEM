@@ -107,9 +107,7 @@ const resources = {
             "restore_success": "Backup restored successfully!",
             "invalid_backup": "Invalid backup file format",
             "import_error": "Error importing backup file.",
-            "total_label": "Total",
-            "amount": "Amount",
-            "thank_you": "Thank you!"
+            "total_label": "Total"
         }
     },
     ta: {
@@ -217,9 +215,7 @@ const resources = {
             "restore_success": "காப்புநகல் வெற்றிகரமாக மீட்டெடுக்கப்பட்டது!",
             "invalid_backup": "தவறான காப்புநகல் கோப்பு வடிவம்",
             "import_error": "காப்புநகல் கோப்பை ஏற்றும்போது பிழை.",
-            "total_label": "மொத்தம்",
-            "amount": "தொகை",
-            "thank_you": "நன்றி!"
+            "total_label": "மொத்தம்"
         }
     }
 };

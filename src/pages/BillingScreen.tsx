@@ -87,20 +87,13 @@ export default function BillingScreen() {
         setPrinterError('');
         try {
             await printReceipt({
-                shopName: t('college_canteen'),
+                shopName: t('college_canteen', { lng: 'en' }),
                 items: cart.map(item => ({
-                    name: i18n.language === 'ta' && item.nameTa ? item.nameTa : item.name,
+                    name: item.name,
                     quantity: item.quantity,
                     price: item.price,
                 })),
                 total: orderTotal,
-                headers: {
-                    item: t('item'),
-                    qty: t('qty'),
-                    amount: t('amount'),
-                    total: t('total'),
-                    thanks: t('thank_you')
-                }
             });
             clearCart();
         } catch (err: unknown) {

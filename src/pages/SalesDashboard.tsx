@@ -228,31 +228,31 @@ export default function SalesDashboard() {
             categories.forEach(cat => {
                 const sales = reportData.categorySalesMap[cat.id] || 0;
                 if (sales > 0) {
-                    const name = i18n.language === 'ta' && cat.nameTa ? cat.nameTa : cat.name;
+                    const name = cat.name;
                     catRows.push(lpad(name, 22) + rpad(`Rs${sales}`, 10) + '\n');
                 }
             });
             const unkSales = reportData.categorySalesMap['unknown'] || 0;
             if (unkSales > 0) {
-                catRows.push(lpad(t('uncategorized'), 22) + rpad(`Rs${unkSales}`, 10) + '\n');
+                catRows.push(lpad('Uncategorized', 22) + rpad(`Rs${unkSales}`, 10) + '\n');
             }
             if (catRows.length === 0) catRows.push(center('No sales'));
 
             const receipt = [
-                center(t('sales_report_builder').toUpperCase()),
+                center('SALES REPORT'),
                 '\n',
                 center(now),
                 center(period),
                 dashes(),
-                lpad(`${t('total_orders')}:`, 22) + rpad(String(reportData.totalOrders), 10) + '\n',
-                lpad(`${t('total_sales')}:`, 22) + rpad(`Rs${reportData.totalSales}`, 10) + '\n',
+                lpad('Orders:', 22) + rpad(String(reportData.totalOrders), 10) + '\n',
+                lpad('Total Sales:', 22) + rpad(`Rs${reportData.totalSales}`, 10) + '\n',
                 dashes(),
-                center(t('categories').toUpperCase() + ' ' + t('dashboard').toUpperCase()),
+                center('CATEGORY SALES'),
                 dashes(),
                 ...catRows,
                 dashes(),
                 '\n',
-                center(t('thank_you') || 'Thank you!'),
+                center('Made with 6ixmindslabs'),
             ].join('');
 
             // ESC/POS: init + text + feed + cut
