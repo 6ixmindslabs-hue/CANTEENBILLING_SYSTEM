@@ -228,7 +228,8 @@ export default function SalesDashboard() {
             categories.forEach(cat => {
                 const sales = reportData.categorySalesMap[cat.id] || 0;
                 if (sales > 0) {
-                    const name = i18n.language === 'ta' && cat.nameTa ? cat.nameTa : cat.name;
+                    // Force English category name for Bluetooth printer compatibility
+                    const name = cat.name;
                     catRows.push(lpad(name, 22) + rpad(`Rs${sales}`, 10) + '\n');
                 }
             });

@@ -87,9 +87,11 @@ export default function BillingScreen() {
         setPrinterError('');
         try {
             await printReceipt({
-                shopName: t('college_canteen'),
+                // Force English for BLE ESC/POS printer support
+                shopName: i18n.t('college_canteen', { lng: 'en' }),
                 items: cart.map(item => ({
-                    name: i18n.language === 'ta' && item.nameTa ? item.nameTa : item.name,
+                    // Force English item name for printer
+                    name: item.name,
                     quantity: item.quantity,
                     price: item.price,
                 })),
