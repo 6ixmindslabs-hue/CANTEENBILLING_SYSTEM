@@ -34,6 +34,8 @@ const PRINTER_PROFILES = [
 let cachedCharacteristic: BluetoothRemoteGATTCharacteristic | null = null;
 let cachedDeviceName: string = '';
 
+const NON_ASCII_TEXT = /[^\x00-\x7F]/;
+
 export function getConnectedPrinterName(): string {
     return cachedDeviceName;
 }
@@ -97,6 +99,16 @@ const CMD = {
     feed3: [ESC, 0x64, 0x03],        // Paper feed 3 lines
     cutPaper: [GS, 0x56, 0x42, 0x00], // Full cut
 };
+
+const RECEIPT_PIXEL_WIDTH = 384;
+const RECEIPT_PADDING = 16;
+const RECEIPT_CONTENT_WIDTH = RECEIPT_PIXEL_WIDTH - (RECEIPT_PADDING * 2);
+const RECEIPT_FONT_STACK = '"Noto Sans Tamil", "Nirmala UI", "Latha", sans-serif';
+const TITLE_FONT = `700 30px ${RECEIPT_FONT_STACK}`;
+const BODY_FONT = `400 22px ${RECEIPT_FONT_STACK}`;
+const BODY_BOLD_FONT = `700 22px ${RECEIPT_FONT_STACK}`;
+const SMALL_FONT = `400 18px ${RECEIPT_FONT_STACK}`;
+const SMALL_BOLD_FONT = `700 18px ${RECEIPT_FONT_STACK}`;
 
 // ─────────────── Byte Builder ───────────────
 
@@ -174,7 +186,7 @@ export interface ReceiptData {
     };
 }
 
-export function buildReceipt(data: ReceiptData): Uint8Array {
+function buildPlainTextReceipt(data: ReceiptData): Uint8Array {
     const now = new Date().toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
 
     const lblItem = data.headers?.item || 'ITEM';
@@ -225,6 +237,258 @@ export function buildReceipt(data: ReceiptData): Uint8Array {
     return bytes(CMD.init, receipt, CMD.feed3, CMD.cutPaper);
 }
 
+function shouldRasterizeReceipt(data: ReceiptData): boolean {
+    const headerValues = Object.values(data.headers || {});
+    return [
+        data.shopName,
+        ...headerValues,
+        ...data.items.map(item => item.name),
+    ].some(value => NON_ASCII_TEXT.test(value));
+}
+
+async function waitForReceiptFonts(): Promise<void> {
+    if (!document.fonts) return;
+
+    try {
+        await Promise.all([
+            document.fonts.ready,
+            document.fonts.load(TITLE_FONT, 'தமிழ்'),
+            document.fonts.load(BODY_FONT, 'தமிழ்'),
+            document.fonts.load(BODY_BOLD_FONT, 'தமிழ்'),
+            document.fonts.load(SMALL_FONT, 'தமிழ்'),
+            document.fonts.load(SMALL_BOLD_FONT, 'தமிழ்'),
+        ]);
+    } catch {
+        // Fall back to the best available system font.
+    }
+}
+
+function wrapText(
+    ctx: CanvasRenderingContext2D,
+    text: string,
+    maxWidth: number
+): string[] {
+    const lines: string[] = [];
+
+    const splitLongToken = (token: string) => {
+        const parts: string[] = [];
+        let current = '';
+
+        for (const char of Array.from(token)) {
+            const test = current + char;
+            if (!current || ctx.measureText(test).width <= maxWidth) {
+                current = test;
+                continue;
+            }
+
+            parts.push(current);
+            current = char;
+        }
+
+        if (current) {
+            parts.push(current);
+        }
+
+        return parts;
+    };
+
+    for (const paragraph of String(text).split('\n')) {
+        if (!paragraph.trim()) {
+            lines.push('');
+            continue;
+        }
+
+        let currentLine = '';
+
+        for (const word of paragraph.split(/\s+/)) {
+            const nextLine = currentLine ? `${currentLine} ${word}` : word;
+            if (ctx.measureText(nextLine).width <= maxWidth) {
+                currentLine = nextLine;
+                continue;
+            }
+
+            if (currentLine) {
+                lines.push(currentLine);
+                currentLine = '';
+            }
+
+            if (ctx.measureText(word).width <= maxWidth) {
+                currentLine = word;
+                continue;
+            }
+
+            const brokenWord = splitLongToken(word);
+            lines.push(...brokenWord.slice(0, -1));
+            currentLine = brokenWord[brokenWord.length - 1] || '';
+        }
+
+        lines.push(currentLine);
+    }
+
+    return lines.length ? lines : [''];
+}
+
+function renderReceiptCanvas(data: ReceiptData): HTMLCanvasElement {
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = RECEIPT_PIXEL_WIDTH;
+    tempCanvas.height = Math.max(1200, 320 + (data.items.length * 120));
+
+    const ctx = tempCanvas.getContext('2d');
+    if (!ctx) {
+        throw new Error('Canvas rendering is not supported on this device.');
+    }
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+    ctx.fillStyle = '#000000';
+    ctx.textBaseline = 'top';
+
+    let y = RECEIPT_PADDING;
+
+    const drawWrappedText = (
+        text: string,
+        font: string,
+        align: CanvasTextAlign,
+        lineHeight: number
+    ) => {
+        ctx.font = font;
+        ctx.textAlign = align;
+
+        for (const line of wrapText(ctx, text, RECEIPT_CONTENT_WIDTH)) {
+            const x = align === 'center'
+                ? RECEIPT_PIXEL_WIDTH / 2
+                : align === 'right'
+                    ? RECEIPT_PIXEL_WIDTH - RECEIPT_PADDING
+                    : RECEIPT_PADDING;
+            ctx.fillText(line, x, y);
+            y += lineHeight;
+        }
+    };
+
+    const drawDivider = () => {
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(RECEIPT_PADDING, y);
+        ctx.lineTo(RECEIPT_PIXEL_WIDTH - RECEIPT_PADDING, y);
+        ctx.stroke();
+        y += 10;
+    };
+
+    const drawPair = (left: string, right: string, font: string, lineHeight: number) => {
+        ctx.font = font;
+        ctx.textAlign = 'left';
+        ctx.fillText(left, RECEIPT_PADDING, y);
+        ctx.textAlign = 'right';
+        ctx.fillText(right, RECEIPT_PIXEL_WIDTH - RECEIPT_PADDING, y);
+        y += lineHeight;
+    };
+
+    const now = new Date().toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
+    const qtyLabel = data.headers?.qty || 'Qty';
+    const amountLabel = data.headers?.amount || 'Amount';
+    const totalLabel = data.headers?.total || 'Total';
+    const thanksLabel = data.headers?.thanks || 'Thank you!';
+
+    drawWrappedText(data.shopName, TITLE_FONT, 'center', 34);
+    y += 6;
+    drawWrappedText(now, SMALL_FONT, 'center', 22);
+    y += 10;
+    drawDivider();
+
+    for (const item of data.items) {
+        drawWrappedText(item.name, BODY_BOLD_FONT, 'left', 28);
+        const lineTotal = item.price * item.quantity;
+        drawPair(
+            `${qtyLabel}: ${item.quantity} x Rs${item.price}`,
+            `${amountLabel}: Rs${lineTotal}`,
+            SMALL_BOLD_FONT,
+            24
+        );
+        y += 8;
+    }
+
+    drawDivider();
+    drawPair(totalLabel, `Rs${data.total}`, BODY_BOLD_FONT, 30);
+    y += 4;
+    drawDivider();
+    y += 6;
+    drawWrappedText(thanksLabel, BODY_FONT, 'center', 28);
+    drawWrappedText('Made with 6ixmindslabs', SMALL_FONT, 'center', 22);
+
+    const finalCanvas = document.createElement('canvas');
+    finalCanvas.width = RECEIPT_PIXEL_WIDTH;
+    finalCanvas.height = Math.ceil(y + RECEIPT_PADDING);
+
+    const finalCtx = finalCanvas.getContext('2d');
+    if (!finalCtx) {
+        throw new Error('Canvas rendering is not supported on this device.');
+    }
+
+    finalCtx.fillStyle = '#ffffff';
+    finalCtx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+    finalCtx.drawImage(tempCanvas, 0, 0);
+
+    return finalCanvas;
+}
+
+function canvasToRasterBytes(canvas: HTMLCanvasElement): Uint8Array {
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+        throw new Error('Canvas rendering is not supported on this device.');
+    }
+
+    const width = canvas.width;
+    const height = canvas.height;
+    const widthBytes = Math.ceil(width / 8);
+    const pixels = ctx.getImageData(0, 0, width, height).data;
+    const rasterBytes = new Uint8Array(widthBytes * height);
+
+    let offset = 0;
+    for (let y = 0; y < height; y++) {
+        for (let xByte = 0; xByte < widthBytes; xByte++) {
+            let value = 0;
+
+            for (let bit = 0; bit < 8; bit++) {
+                const x = (xByte * 8) + bit;
+                if (x >= width) continue;
+
+                const pixelOffset = ((y * width) + x) * 4;
+                const r = pixels[pixelOffset];
+                const g = pixels[pixelOffset + 1];
+                const b = pixels[pixelOffset + 2];
+                const a = pixels[pixelOffset + 3];
+
+                if (a < 64) continue;
+
+                const grayscale = (0.299 * r) + (0.587 * g) + (0.114 * b);
+                if (grayscale < 200) {
+                    value |= 0x80 >> bit;
+                }
+            }
+
+            rasterBytes[offset++] = value;
+        }
+    }
+
+    const xL = widthBytes & 0xff;
+    const xH = (widthBytes >> 8) & 0xff;
+    const yL = height & 0xff;
+    const yH = (height >> 8) & 0xff;
+
+    return bytes([GS, 0x76, 0x30, 0x00, xL, xH, yL, yH], rasterBytes);
+}
+
+export async function buildReceipt(data: ReceiptData): Promise<Uint8Array> {
+    if (!shouldRasterizeReceipt(data)) {
+        return buildPlainTextReceipt(data);
+    }
+
+    await waitForReceiptFonts();
+    const canvas = renderReceiptCanvas(data);
+    return bytes(CMD.init, canvasToRasterBytes(canvas), CMD.feed3, CMD.cutPaper);
+}
+
 // ─────────────── Send to Printer ───────────────
 
 const CHUNK_SIZE = 100; // Safe BLE MTU chunk size
@@ -258,5 +522,5 @@ export async function printReceipt(data: ReceiptData): Promise<void> {
     if (!cachedCharacteristic) {
         throw new Error('No printer connected. Tap "Connect Printer" first.');
     }
-    await sendChunked(cachedCharacteristic, buildReceipt(data));
+    await sendChunked(cachedCharacteristic, await buildReceipt(data));
 }
