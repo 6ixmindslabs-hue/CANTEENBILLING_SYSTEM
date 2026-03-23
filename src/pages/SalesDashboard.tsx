@@ -21,6 +21,7 @@ const toDateStr = (date: Date) => {
 
 export default function SalesDashboard() {
     const { t, i18n } = useTranslation();
+    const printT = i18n.getFixedT('en');
     const orders = useLiveQuery(() => db.orders.toArray()) || [];
     const orderItems = useLiveQuery(() => db.orderItems.toArray()) || [];
     const categories = useLiveQuery(() => db.categories.toArray()) || [];
@@ -234,20 +235,20 @@ export default function SalesDashboard() {
             });
             const unkSales = reportData.categorySalesMap['unknown'] || 0;
             if (unkSales > 0) {
-                catRows.push(lpad('Uncategorized', 22) + rpad(`Rs${unkSales}`, 10) + '\n');
+                catRows.push(lpad(printT('uncategorized'), 22) + rpad(`Rs${unkSales}`, 10) + '\n');
             }
             if (catRows.length === 0) catRows.push(center('No sales'));
 
             const receipt = [
-                center('SALES REPORT'),
+                center(printT('sales_report_builder').toUpperCase()),
                 '\n',
                 center(now),
                 center(period),
                 dashes(),
-                lpad('Orders:', 22) + rpad(String(reportData.totalOrders), 10) + '\n',
-                lpad('Total Sales:', 22) + rpad(`Rs${reportData.totalSales}`, 10) + '\n',
+                lpad(`${printT('total_orders')}:`, 22) + rpad(String(reportData.totalOrders), 10) + '\n',
+                lpad(`${printT('total_sales')}:`, 22) + rpad(`Rs${reportData.totalSales}`, 10) + '\n',
                 dashes(),
-                center('CATEGORY SALES'),
+                center(`${printT('categories').toUpperCase()} SALES`),
                 dashes(),
                 ...catRows,
                 dashes(),

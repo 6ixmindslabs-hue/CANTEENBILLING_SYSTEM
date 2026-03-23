@@ -15,6 +15,7 @@ import {
 export default function BillingScreen() {
     const { t, i18n } = useTranslation();
     const { cart, addToCart, increaseQuantity, decreaseQuantity, removeFromCart, clearCart, total, selectedCategory, setSelectedCategory } = useStore();
+    const printT = i18n.getFixedT('en');
 
     const [printerName, setPrinterName] = useState<string>('');
     const [isConnecting, setIsConnecting] = useState(false);
@@ -87,13 +88,20 @@ export default function BillingScreen() {
         setPrinterError('');
         try {
             await printReceipt({
-                shopName: t('college_canteen', { lng: 'en' }),
+                shopName: printT('college_canteen'),
                 items: cart.map(item => ({
                     name: item.name,
                     quantity: item.quantity,
                     price: item.price,
                 })),
                 total: orderTotal,
+                headers: {
+                    item: printT('item'),
+                    qty: printT('qty'),
+                    amount: printT('amount'),
+                    total: printT('total'),
+                    thanks: printT('thank_you'),
+                },
             });
             clearCart();
         } catch (err: unknown) {
