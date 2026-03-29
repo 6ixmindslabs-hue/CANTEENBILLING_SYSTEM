@@ -18,9 +18,9 @@ export default defineConfig({
         clientsClaim: true,
       },
       manifest: {
-        name: 'Offline Canteen POS',
-        short_name: 'CanteenPOS',
-        description: 'Offline POS System for Canteens',
+        name: 'Appu Canteen POS',
+        short_name: 'AppuPOS',
+        description: 'Offline POS System for Appu Canteen',
         theme_color: '#ffffff',
         icons: [
           {
