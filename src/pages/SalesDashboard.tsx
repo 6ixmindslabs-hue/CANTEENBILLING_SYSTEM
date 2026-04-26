@@ -186,7 +186,7 @@ export default function SalesDashboard() {
             categorySalesMap,
             itemSalesMap
         };
-    }, [orders, orderItems, items, categories, reportPeriod, i18n.language]);
+    }, [orders, orderItems, items, categories, reportPeriod, i18n.language, t]);
 
     // Format for Print "01-03-2026"
     const formatShortDate = (dateStr: string) => {

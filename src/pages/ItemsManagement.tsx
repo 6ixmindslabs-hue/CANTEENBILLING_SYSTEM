@@ -53,7 +53,7 @@ export default function ItemsManagement() {
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
-    const handleEdit = (item: any) => {
+    const handleEdit = (item: { id: string, name: string, nameTa?: string, price: number, categoryId: string, image: string }) => {
         setEditingId(item.id);
         setName(item.name);
         setNameTa(item.nameTa || '');

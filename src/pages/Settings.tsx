@@ -56,7 +56,7 @@ export default function Settings() {
                     await db.orders.clear();
                     await db.orderItems.clear();
                     alert(t('sales_cleared'));
-                } catch (error) {
+                } catch {
                     alert(t('clear_error'));
                 } finally {
                     setClearing(false);
@@ -99,7 +99,7 @@ export default function Settings() {
 
             setExportSuccess(true);
             setTimeout(() => setExportSuccess(false), 4000);
-        } catch (error) {
+        } catch {
             alert(t('export_error'));
         } finally {
             setExporting(false);
@@ -121,7 +121,7 @@ export default function Settings() {
                     const data = JSON.parse(event.target?.result as string);
 
                     if (data.categories && data.items) {
-                        const itemsWithImages = data.items.filter((i: any) => i.image).length;
+                        const itemsWithImages = data.items.filter((i: { image?: string }) => i.image).length;
                         const confirmMsg = `${t('restore_confirm')}\n\n📦 ${data.categories.length} categories\n🍽️ ${data.items.length} items (${itemsWithImages} with images)\n🧾 ${data.orders?.length ?? 0} orders`;
                         if (window.confirm(confirmMsg)) {
                             setClearing(true);
@@ -137,7 +137,7 @@ export default function Settings() {
                     } else {
                         alert(t('invalid_backup'));
                     }
-                } catch (error) {
+                } catch {
                     alert(t('import_error'));
                 } finally {
                     setClearing(false);

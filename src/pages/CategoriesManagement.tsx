@@ -30,7 +30,7 @@ export default function CategoriesManagement() {
         setNameTa('');
     };
 
-    const handleEdit = (cat: any) => {
+    const handleEdit = (cat: { id: string, name: string, nameTa?: string }) => {
         setEditingId(cat.id);
         setName(cat.name);
         setNameTa(cat.nameTa || '');
